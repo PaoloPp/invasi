@@ -17,25 +17,19 @@ def somma_cumulata(_var):
         cumulata.append(somma)
     return cumulata
 
-@app.route('/coeff', methods=['GET'])
-#def coeff(_nominalValue, _varCoeff): #Ai, A'i, Ditot, Eipot, Eiirr, Eiind
-def coeff():
-    nominalValue = request.args.get('nominalValue')
-    varCoeff = request.args.get('varCoeff')
-    coeffValue = float(nominalValue) * float(varCoeff)
-    #for i in range(0, 12):
-    #    _coeffValue[i] = _nominalValue * _varCoeff[i]
-    #return _coeffValue
-    return '''
-              <h1>The nominal value is: {}</h1>
-              <h1>The coefficient value is: {}</h1>
-              <h1>The result value is: {}'''.format(nominalValue, varCoeff, coeffValue)
+def coeff(_nominalValue, _varCoeff): #Ai, A'i, Ditot, Eipot, Eiirr, Eiind
+    coeffValue = float(_nominalValue) * float(_varCoeff)
+    return coeffValue
 
 @app.route('/form', methods=['GET', 'POST'])
 def form():
     if request.method == 'POST':
-        keys = ["Cj(A)", "Cj(A')", "Cj(ev)", "Cj(inf)", "Cj(ec)", "Cj(pot)", "Cj(irr)", "Cj(ind)"]
         vol = ["S", "Winv tot", "Winv aut", "Wo", "A", "A'", "D ec", "E pot", "E irr", "E ind", "P ev", "P inf"]
+        vol2 = ["A", "A'", "P ev", "P inf", "D ec", "E pot", "E irr", "E ind"]
+        keys = ["Cj(A)", "Cj(A')", "Cj(ev)", "Cj(inf)", "Cj(ec)", "Cj(pot)", "Cj(irr)", "Cj(ind)"]
+        outj = ["Aj", "A'j", "Pj ev", "Pj inf", "Dj ec", "Ej pot", "Ej irr", "Ej ind"]
+        out_star = ["A*", "A'*", "A tot*", "D ec*", "P ev*", "P inf*", "E pot*", "Ej irr*", "E ind*", "E tot*", "w*"]
+        
         data = {}
 
         data["Mese di partenza"] = request.form.get('starting_month')
@@ -45,9 +39,14 @@ def form():
 
         for k in keys:
             values = []
+            values_coeff = []
             for i in range(1, 13):
-                values.append(request.form.get(f'coeff-{i}-{keys.index(k) + 1}'))
+                tmp = request.form.get(f'coeff-{i}-{keys.index(k) + 1}')
+                values.append(tmp)
+                values_coeff.append(coeff(data[keys.index(k)], tmp))
             data[k] = values
+
+
 
         with open('data.json', 'w') as json_file:
             json.dump(data, json_file, indent=4)
@@ -60,15 +59,14 @@ def form():
 @app.route('/')
 def dashboard():
     # You can pass dynamic data here for the dashboard
-    data = {
-        'title': 'Simple Dashboard',
-        'metrics': [
-            {'label': 'Users', 'value': 1500},
-            {'label': 'Sales', 'value': 320},
-            {'label': 'Visitors', 'value': 4587}
-        ]
-    }
-    return render_template('dashboard.html', data=data)
+
+    with open('data.json', 'r') as json_file:
+        data = json.load(json_file)
+    
+    months = set_year(data["Mese di partenza"])
+
+
+    return render_template('dashboard.html', data=data, months=months)
 
 def main():
     print("Hello World!")
