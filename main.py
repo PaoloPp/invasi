@@ -3,6 +3,7 @@
 #import pandas as pd
 from flask import Flask, render_template, request, flash, redirect, url_for
 from itertools import cycle
+import json
 from set_year import set_year
 
 app = Flask(__name__)
@@ -33,23 +34,24 @@ def coeff():
 @app.route('/form', methods=['GET', 'POST'])
 def form():
     if request.method == 'POST':
-        # Extract data from form
-        name = request.form.get('name')
-        email = request.form.get('email')
-        phone = request.form.get('phone')
-        address = request.form.get('address')
-        city = request.form.get('city')
-        state = request.form.get('state')
-        zipcode = request.form.get('zipcode')
-        country = request.form.get('country')
+        keys = ["Cj(A)", "Cj(A')", "Cj(ev)", "Cj(inf)", "Cj(ec)", "Cj(pot)", "Cj(irr)", "Cj(ind)"]
+        vol = ["S", "Winv tot", "Winv aut", "Wo", "A", "A'", "D ec", "E pot", "E irr", "E ind", "P ev", "P inf"]
+        data = {}
 
-        # Simple validation check
-        if not all([name, email, phone, address, city, state, zipcode, country]):
-            flash('All fields are required!', 'danger')
-            return redirect(url_for('form'))
+        data["Mese di partenza"] = request.form.get('starting_month')
         
-        # Process form data here (e.g., store in a database)
-        
+        for v in vol:
+            data[v] = request.form.get(f'vol-{vol.index(v) + 1}')
+
+        for k in keys:
+            values = []
+            for i in range(1, 13):
+                values.append(request.form.get(f'coeff-{i}-{keys.index(k) + 1}'))
+            data[k] = values
+
+        with open('data.json', 'w') as json_file:
+            json.dump(data, json_file, indent=4)
+
         flash('Form successfully submitted!', 'success')
         return redirect(url_for('form'))
     
