@@ -24,8 +24,9 @@ def coeff(_nominalValue, _varCoeff): #Ai, A'i, Ditot, Eipot, Eiirr, Eiind
 @app.route('/form', methods=['GET', 'POST'])
 def form():
     if request.method == 'POST':
-        vol = ["S", "Winv tot", "Winv aut", "Wo", "A", "A'", "D ec", "E pot", "E irr", "E ind", "P ev", "P inf"]
+        vol = ["S", "Winv tot", "Winv aut", "Wo", "A", "A'", "P ev", "P inf", "D ec", "E pot", "E irr", "E ind"]
         keys = ["Cj(A)", "Cj(A')", "Cj(ev)", "Cj(inf)", "Cj(ec)", "Cj(pot)", "Cj(irr)", "Cj(ind)"]
+        out = ["A", "A'", "P ev", "P inf", "D ec", "E pot", "E irr", "E ind"]
         data = {}
 
         data["Mese di partenza"] = request.form.get('starting_month')
@@ -37,11 +38,14 @@ def form():
             values = []
             values_coeff = []
             for i in range(1, 13):
-                tmp = request.form.get(f'coeff-{i}-{keys.index(k) + 1}')
-                values.append(tmp)
-                values_coeff.append(coeff(data[keys.index(k)], tmp))
+                values.append(request.form.get(f'coeff-{i}-{keys.index(k) + 1}'))
             data[k] = values
 
+        for k, o in zip(keys, out):
+            values = []
+            for i in range(0, 12):
+                values.append(coeff(data[o], data[k][i]))
+            data[o + " j"] = values
 
         with open('data.json', 'w') as json_file:
             json.dump(data, json_file, indent=4)
