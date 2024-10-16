@@ -25,11 +25,7 @@ def coeff(_nominalValue, _varCoeff): #Ai, A'i, Ditot, Eipot, Eiirr, Eiind
 def form():
     if request.method == 'POST':
         vol = ["S", "Winv tot", "Winv aut", "Wo", "A", "A'", "D ec", "E pot", "E irr", "E ind", "P ev", "P inf"]
-        vol2 = ["A", "A'", "P ev", "P inf", "D ec", "E pot", "E irr", "E ind"]
         keys = ["Cj(A)", "Cj(A')", "Cj(ev)", "Cj(inf)", "Cj(ec)", "Cj(pot)", "Cj(irr)", "Cj(ind)"]
-        outj = ["Aj", "A'j", "Pj ev", "Pj inf", "Dj ec", "Ej pot", "Ej irr", "Ej ind"]
-        out_star = ["A*", "A'*", "A tot*", "D ec*", "P ev*", "P inf*", "E pot*", "Ej irr*", "E ind*", "E tot*", "w*"]
-        
         data = {}
 
         data["Mese di partenza"] = request.form.get('starting_month')
@@ -47,7 +43,6 @@ def form():
             data[k] = values
 
 
-
         with open('data.json', 'w') as json_file:
             json.dump(data, json_file, indent=4)
 
@@ -56,17 +51,17 @@ def form():
     
     return render_template('form.html')
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def dashboard():
     # You can pass dynamic data here for the dashboard
-
-    with open('data.json', 'r') as json_file:
-        data = json.load(json_file)
+    if request.method == 'POST':
+        with open('data.json', 'r') as json_file:
+            data = json.load(json_file)
     
-    months = set_year(data["Mese di partenza"])
-
-
-    return render_template('dashboard.html', data=data, months=months)
+        months = set_year(data["Mese di partenza"])
+        return render_template('dashboard.html', data=data, months=months)
+    elif request.method == 'GET':
+        return render_template('dashboard.html', data=None)
 
 def main():
     print("Hello World!")

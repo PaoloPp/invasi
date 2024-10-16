@@ -12,6 +12,16 @@
     <div class="container mt-5">
         <h1 class="text-center">Dashboard</h1>
         <h3>Data from JSON</h3>
+        <form id="data-select" method="POST" novalidate>
+            <select class="form-select" id="data_select" name="data_select" required>
+                <option value="data.json">data.json</option>
+            </select>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
+
+        <br>
 
         <table class="table table-bordered">
             <thead>
