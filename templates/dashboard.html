@@ -12,7 +12,7 @@
     <div class="container mt-5">
         <h1 class="text-center">Dashboard</h1>
         <h3>Data from JSON</h3>
-        <form id="data-select" method="POST" novalidate>
+        <form id="data_select" method="POST">
             <select class="form-select" id="data_select" name="data_select" required>
                 <option value="data.json">data.json</option>
             </select>
@@ -75,6 +75,29 @@
 
         <table class="table table-bordered table-striped">
             <thead>
+                <th>A*</th>
+                <th>A'*</th>
+                <th>P ev*</th>
+                <th>P inf*</th>
+                <th>D ec*</th>
+                <th>E pot*</th>
+                <th>E irr*</th>
+                <th>E ind*</th>
+            </thead>
+            <tbody>
+                <td>{{ data["A*"] }}</td>
+                <td>{{ data["A\'*"] }}</td>
+                <td>{{ data["P ev*"] }}</td>
+                <td>{{ data["P inf*"] }}</td>
+                <td>{{ data["D ec*"] }}</td>
+                <td>{{ data["E pot*"] }}</td>
+                <td>{{ data["E irr*"] }}</td>
+                <td>{{ data["E ind*"] }}</td>
+            </tbody>
+        </table>
+
+        <table class="table table-bordered table-striped">
+            <thead>
                 <tr>
                     <th>Mese</th>
                     <th>Cj(A)</th>
@@ -92,7 +115,7 @@
                 <tr>
                     <td>{{ months[i] }}</td>
                     <td>{{ data['Cj(A)'][i] }}</td>
-                    <td>{{ data["Cj(A')"][i] }}</td>
+                    <td>{{ data['Cj(A\')'][i] }}</td>
                     <td>{{ data['Cj(ev)'][i] }}</td>
                     <td>{{ data['Cj(inf)'][i] }}</td>
                     <td>{{ data['Cj(ec)'][i] }}</td>

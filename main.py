@@ -83,10 +83,11 @@ def form():
 def dashboard():
     # You can pass dynamic data here for the dashboard
     if request.method == 'POST':
-        with open('data.json', 'r') as json_file:
+        with open(request.form.get('data_select'), 'r') as json_file:
             data = json.load(json_file)
-    
+            print("File opened")
         months = set_year(data["Mese di partenza"])
+        print("Starting month set")
         return render_template('dashboard.html', data=data, months=months)
     elif request.method == 'GET':
         return render_template('dashboard.html', data=None)
@@ -96,4 +97,4 @@ def main():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=8080)
