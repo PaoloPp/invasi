@@ -177,6 +177,67 @@
                 </tbody>
             </table>
 
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <th>Mese</th>
+                    <th>E<sub>tot</sub> j</th>
+                    <th>E<sub>tot</sub> *</th>
+                    <th>A<sub>tot</sub> j</th>
+                    <th>A<sub>tot</sub> *</th>
+                    <th>w j</th>
+                    <th>w *</th>
+                    <th>W j</th>
+                    <th>W *</th>
+                </thead>
+                <tbody>
+                    {% for i in range(data['A j']|length) %}
+                    <tr>
+                    <td>{{ months[i] }}</td>
+                    <td>{{ data["Etot j"][i] }}</td>
+                    <td>{{ data["Etot*"][i] }}</td>
+                    <td>{{ data["Aitot j"][i] }}</td>
+                    <td>{{ data["Aitot*"][i] }}</td>
+                    <td>{{ data["w j"][i] }}</td>
+                    <td>{{ data["w*"][i] }}</td>
+                    <td>{{ data["W j"][i] }}</td>
+                    <td>{{ data["W*"][i] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <th>Mese</th>
+                    <th>Wi A*</th>
+                    <th>Wi B*</th>
+                    <th>Sf A</th>
+                    <th>Sf A*</th>
+                    <th>Sf B</th>
+                    <th>Sf B*</th>
+                    <th>D/S A j</th>
+                    <th>D/S A *</th>
+                    <th>D/S B j</th>
+                    <th>D/S B *</th>
+                </thead>
+                <tbody>
+                    {% for i in range(data['A j']|length) %}
+                    <tr>
+                    <td>{{ months[i] }}</td>
+                    <td>{{ data["Wi A*"][i] }}</td>
+                    <td>{{ data["Wi B*"][i] }}</td>
+                    <td>{{ data["Sf A"][i] }}</td>
+                    <td>{{ data["Sf A*"][i] }}</td>
+                    <td>{{ data["Sf B"][i] }}</td>
+                    <td>{{ data["Sf B*"][i] }}</td>
+                    <td>{{ data["D/S A j"][i] }}</td>
+                    <td>{{ data["D/S A*"][i] }}</td>
+                    <td>{{ data["D/S B j"][i] }}</td>
+                    <td>{{ data["D/S B*"][i] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
         </div>
 
         <div id="PostCorrezioni" class="table-responsive" style="display:none;">

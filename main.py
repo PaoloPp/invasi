@@ -28,7 +28,7 @@ def form():
         vol = ["S", "Winv tot", "Winv aut", "Wo", "A", "A'", "P ev", "P inf", "D ec", "E pot", "E irr", "E ind", "E tra"]
         keys = ["Cj(A)", "Cj(A')", "Cj(ev)", "Cj(inf)", "Cj(ec)", "Cj(pot)", "Cj(irr)", "Cj(ind)", "Cj(tra)"]
         outj = ["A", "A'", "P ev", "P inf", "D ec", "E pot", "E irr", "E ind", "E tra"]
-        out = ["A*", "A'*", "P ev*", "P inf*", "D ec*", "E pot*", "E irr*", "E ind*"]
+        out = ["A*", "A'*", "P ev*", "P inf*", "D ec*", "E pot*", "E irr*", "E ind*", "E tra*"]
         data = {}
         values_tot = []
         values_aitot = []
@@ -103,13 +103,14 @@ def form():
             if(values_Wib[i] < data["Winv aut"]):
                 values_sfb.append('0')
             else: values_sfb.append(data["w j"][i])
-
             values_deficitA.append(round(float(data["w j"][i] - values_sfa[i]),2))
             values_deficitB.append(round(float(data["w j"][i] - values_sfb[i]),2))
         data["Wi A*"] = values_Wia
         data["Wi B*"] = values_Wib
         data["Sf A"] = values_sfa
         data["Sf B"] = values_sfb
+        data["Sf A*"] = somma_cumulata(data["Sf A"])
+        data["Sf B*"] = somma_cumulata(data["Sf B"])
         data["D/S A j"] = values_deficitA
         data["D/S B j"] = values_deficitB
         data["D/S A*"] = somma_cumulata(data["D/S A j"])
