@@ -79,28 +79,6 @@
 
         <div id="PreCorrezioni" class="table-responsive">
             <p>Pre correzioni</p>
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <th>A*</th>
-                    <th>A'*</th>
-                    <th>P ev*</th>
-                    <th>P inf*</th>
-                    <th>D ec*</th>
-                    <th>E pot*</th>
-                    <th>E irr*</th>
-                    <th>E ind*</th>
-                </thead>
-                <tbody>
-                    <td>{{ data["A*"] }}</td>
-                    <td>{{ data["A\'*"] }}</td>
-                    <td>{{ data["P ev*"] }}</td>
-                    <td>{{ data["P inf*"] }}</td>
-                    <td>{{ data["D ec*"] }}</td>
-                    <td>{{ data["E pot*"] }}</td>
-                    <td>{{ data["E irr*"] }}</td>
-                    <td>{{ data["E ind*"] }}</td>
-                </tbody>
-            </table>
 
             <table class="table table-bordered table-striped">
                 <thead>
@@ -114,6 +92,7 @@
                         <th>Cj(pot)</th>
                         <th>Cj(irr)</th>
                         <th>Cj(ind)</th>
+                        <th>Cj(tra)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,10 +107,76 @@
                         <td>{{ data['Cj(pot)'][i] }}</td>
                         <td>{{ data['Cj(irr)'][i] }}</td>
                         <td>{{ data['Cj(ind)'][i] }}</td>
+                        <td>{{ data['Cj(tra)'][i] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Mese</th>
+                        <th>A j</th>
+                        <th>A'</th>
+                        <th>Pev j</th>
+                        <th>Pinf j</th>
+                        <th>Dec j</th>
+                        <th>Epot j</th>
+                        <th>Eirr j</th>
+                        <th>Eind j</th>
+                        <th>Etra j</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in range(data['A j']|length) %}
+                    <tr>
+                        <td>{{ months[i] }}</td>
+                        <td>{{ data['A j'][i] }}</td>
+                        <td>{{ data['A\' j'][i] }}</td>
+                        <td>{{ data['P ev j'][i] }}</td>
+                        <td>{{ data['P inf j'][i] }}</td>
+                        <td>{{ data['D ec j'][i] }}</td>
+                        <td>{{ data['E pot j'][i] }}</td>
+                        <td>{{ data['E irr j'][i] }}</td>
+                        <td>{{ data['E ind j'][i] }}</td>
+                        <td>{{ data['E tra j'][i] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <th>Mese</th>
+                    <th>A*</th>
+                    <th>A'*</th>
+                    <th>P ev*</th>
+                    <th>P inf*</th>
+                    <th>D ec*</th>
+                    <th>E pot*</th>
+                    <th>E irr*</th>
+                    <th>E ind*</th>
+                    <th>E tra*</th>
+                </thead>
+                <tbody>
+                    {% for i in range(data['A j']|length) %}
+                    <tr>
+                    <td>{{ months[i] }}</td>
+                    <td>{{ data["A*"][i] }}</td>
+                    <td>{{ data["A\'*"][i] }}</td>
+                    <td>{{ data["P ev*"][i] }}</td>
+                    <td>{{ data["P inf*"][i] }}</td>
+                    <td>{{ data["D ec*"][i] }}</td>
+                    <td>{{ data["E pot*"][i] }}</td>
+                    <td>{{ data["E irr*"][i] }}</td>
+                    <td>{{ data["E ind*"][i] }}</td>
+                    <td>{{ data["E tra*"][i] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
         </div>
 
         <div id="PostCorrezioni" class="table-responsive" style="display:none;">
@@ -146,6 +191,7 @@
                     <th>E pot*</th>
                     <th>E irr*</th>
                     <th>E ind*</th>
+                    <th>E tra*</th>
                 </thead>
                 <tbody>
                     <td>{{ data["A*"] }}</td>
@@ -156,6 +202,7 @@
                     <td>{{ data["E pot*"] }}</td>
                     <td>{{ data["E irr*"] }}</td>
                     <td>{{ data["E ind*"] }}</td>
+                    <td>{{ data["E tra*"] }}</td>
                 </tbody>
             </table>
 
@@ -171,6 +218,7 @@
                         <th>Cj(pot)</th>
                         <th>Cj(irr)</th>
                         <th>Cj(ind)</th>
+                        <th>Cj(tra)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -185,6 +233,7 @@
                         <td>{{ data['Cj(pot)'][i] }}</td>
                         <td>{{ data['Cj(irr)'][i] }}</td>
                         <td>{{ data['Cj(ind)'][i] }}</td>
+                        <td>{{ data['Cj(tra)'][i] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
