@@ -1,21 +1,36 @@
 #import numpy as np
-#import matplotlib.pyplot as plt
+import matplotlib
+import matplotlib.pyplot as plt
 #import pandas as pd
 import simplejson as json
 from flask import Flask, render_template, request, flash, redirect, url_for
 from itertools import cycle
 from decimal import Decimal, getcontext
 from set_year import set_year
-
+from round_floats import round_floats
+matplotlib.use('Agg')
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
+
+def plot_values(_label, _data, _name):
+    ldata = _data.copy()
+    x = range(1, 13)
+    for d in _label:
+        if(isinstance(ldata[d], float) == True):
+            ldata[d] = [ldata[d]]*12
+        plt.plot(x, ldata[d], label=d)
+    plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=4)  # `ncol` controls the number of columns in the legend
+    plt.subplots_adjust(bottom=0.25)  # Add space at the bottom for the legend
+    plt.savefig(f"static/{_name}_plot.png", format='png', dpi=150)
+    plt.close()
+
 
 def somma_cumulata(_var):
     cumulata = []
     somma = 0
     for i in range(0, len(_var)):
-        somma += _var[i]
-        cumulata.append(round(somma,2))
+        somma += float(_var[i])
+        cumulata.append(somma)
     return cumulata
 
 def coeff(_nominalValue, _varCoeff): #Ai, A'i, Ditot, Eipot, Eiirr, Eiind
@@ -47,36 +62,36 @@ def form():
         data["Mese di partenza"] = request.form.get('starting_month')
         
         for v in vol:
-            data[v] = round(float(request.form.get(f'vol-{vol.index(v) + 1}')),2)
+            data[v] = float(request.form.get(f'vol-{vol.index(v) + 1}'))
 
         for k in keys:
             values = []
             for i in range(1, 13):
-                values.append(round(float(request.form.get(f'coeff-{i}-{keys.index(k) + 1}')), 2))
+                values.append(float(request.form.get(f'coeff-{i}-{keys.index(k) + 1}')))
             data[k] = values
 
         for k, o in zip(keys, outj):
             values = []
             for i in range(0, 12):
-                values.append(round(coeff(data[o], data[k][i]),2))
+                values.append(coeff(data[o], data[k][i]))
             data[o + " j"] = values
 
         for o, oj in zip(out, outj):
             data[o] = somma_cumulata(data[oj + " j"])
 
         for i in range(0, 12):
-            values_tot.append(round(float(data["D ec j"][i] + data["E pot j"][i] + data["E irr j"][i] + data["E ind j"][i]),2))
+            values_tot.append(float(data["D ec j"][i] + data["E pot j"][i] + data["E irr j"][i] + data["E ind j"][i]))
         data["Etot j"] = values_tot
         data["Etot*"] = somma_cumulata(data["Etot j"])
 
         for i in range(0, 12):
-            values_aitot.append(round(float(data["A j"][i] + data["A' j"][i]),2))
+            values_aitot.append(float(data["A j"][i] + data["A' j"][i]))
         data["Aitot j"] = values_aitot
         data["Aitot*"] = somma_cumulata(data["Aitot j"])
 
         for i in range(0, 12):
-            wi = round(float(data["Aitot j"][i] - data["Etot j"][i]),2)
-            Wi = round(float(wi + float(data["Wo"])),2)
+            wi = float(data["Aitot j"][i] - data["Etot j"][i])
+            Wi = float(wi + float(data["Wo"]))
             values_wi.append(wi)
             values_Wi.append(Wi)
         data["w j"] = values_wi
@@ -84,7 +99,7 @@ def form():
         data["w*"] = somma_cumulata(data["w j"])
 
         for i in range(0, 12):
-            values_Wistar.append(round(float(data["w j"][i] + data["Wo"]),2))
+            values_Wistar.append(float(data["w*"][i] + data["Wo"]))
         data["W*"] = values_Wistar
 
         for i in range(0, 12):
@@ -103,8 +118,8 @@ def form():
             if(values_Wib[i] < data["Winv aut"]):
                 values_sfb.append('0')
             else: values_sfb.append(data["w j"][i])
-            values_deficitA.append(round(float(data["w j"][i] - values_sfa[i]),2))
-            values_deficitB.append(round(float(data["w j"][i] - values_sfb[i]),2))
+            values_deficitA.append(float(data["w j"][i] - float(values_sfa[i])))
+            values_deficitB.append(float(data["w j"][i] - float(values_sfb[i])))
         data["Wi A*"] = values_Wia
         data["Wi B*"] = values_Wib
         data["Sf A"] = values_sfa
@@ -115,12 +130,9 @@ def form():
         data["D/S B j"] = values_deficitB
         data["D/S A*"] = somma_cumulata(data["D/S A j"])
         data["D/S B*"] = somma_cumulata(data["D/S B j"])
-        
-
-
-
+    
         with open('data.json', 'w') as json_file:
-            json.dump(data, json_file, indent=4, use_decimal=True)
+            json.dump(data, json_file, indent=4)
 
         flash('Form successfully submitted!', 'success')
         return redirect(url_for('form'))
@@ -133,10 +145,33 @@ def dashboard():
     if request.method == 'POST':
         with open(request.form.get('data_select'), 'r') as json_file:
             data = json.load(json_file)
-            print("File opened")
+        data = round_floats(data)
         months = set_year(data["Mese di partenza"])
-        print("Starting month set")
-        return render_template('dashboard.html', data=data, months=months)
+
+        plot_values(["Aitot*", "Etot*", "W*", "Sf A*", "D/S A*", "Winv tot", "Wo"], data, "casoA")
+        plot_values(["Aitot*", "Etot*", "W*", "Sf B*", "D/S B*", "Winv tot", "Wo"], data, "casoB")
+
+        #plt.plot(months, data["Aitot*"], marker='o', label="Aitot*")
+        #plt.plot(months, data["Etot*"], marker='s', label="Etot*")
+        #plt.plot(months, data["W*"], marker='^', label="W*")
+        #plt.plot(months, data["Sf A*"], marker='D', label="Sf A*")
+        #plt.plot(months, data["D/S A*"], marker='x', label="D/S A*")
+        #plt.plot(months, data["Winv tot"]*12, marker='*', label="Winv tot")
+        #plt.plot(months, data["Wo"]*12, marker='P', label="Wo")
+
+        #plt.savefig("casoA_plot.png", format='png', dpi=300)
+
+        #plt.clf()
+        #plt.plot(months, data["Aitot*"], marker='o', label="Aitot*")
+        #plt.plot(months, data["Etot*"], marker='s', label="Etot*")
+        #plt.plot(months, data["W*"], marker='^', label="W*")
+        #plt.plot(months, data["Sf B*"], marker='D', label="Sf B*")
+        #plt.plot(months, data["D/S B*"], marker='x', label="D/S B*")
+        #plt.plot(months, data["Winv tot"]*12, marker='*', label="Winv tot")
+        #plt.plot(months, data["Wo"]*12, marker='P', label="Wo")
+        #plt.savefig("casoB_plot.png", format='png', dpi=300)
+
+        return render_template('dashboard.html', data=data, months=months, plotA="casoA_plot.png", plotB="casoB_plot.png")
     elif request.method == 'GET':
         return render_template('dashboard.html', data=None)
 
@@ -145,4 +180,4 @@ def main():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8080)
+    app.run(debug=False)

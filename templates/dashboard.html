@@ -237,7 +237,10 @@
                     {% endfor %}
                 </tbody>
             </table>
-
+            <div class="container">
+                <img src="{{ url_for('static', filename=plotA) }}" alt="Caso A">
+                <img src="{{ url_for('static', filename=plotB) }}" alt="Caso B">
+            </div>
         </div>
 
         <div id="PostCorrezioni" class="table-responsive" style="display:none;">
@@ -327,5 +330,4 @@
         });
     </script>
 </body>
-
 </html>
