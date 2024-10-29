@@ -1,4 +1,5 @@
 #import numpy as np
+import os
 import matplotlib
 import matplotlib.pyplot as plt
 #import pandas as pd
@@ -131,7 +132,7 @@ def form():
         data["D/S A*"] = somma_cumulata(data["D/S A j"])
         data["D/S B*"] = somma_cumulata(data["D/S B j"])
     
-        with open('data.json', 'w') as json_file:
+        with open("elaborazioni/" + request.form.get("filename") + ".json", 'w') as json_file:
             json.dump(data, json_file, indent=4)
 
         flash('Form successfully submitted!', 'success')
@@ -141,9 +142,11 @@ def form():
 
 @app.route('/', methods=['GET', 'POST'])
 def dashboard():
+    files = os.listdir("elaborazioni")
+    files = [f for f in files if f.endswith('.json')]
     # You can pass dynamic data here for the dashboard
     if request.method == 'POST':
-        with open(request.form.get('data_select'), 'r') as json_file:
+        with open("elaborazioni/" + request.form.get('data_select'), 'r') as json_file:
             data = json.load(json_file)
         data = round_floats(data)
         months = set_year(data["Mese di partenza"])
@@ -151,34 +154,14 @@ def dashboard():
         plot_values(["Aitot*", "Etot*", "W*", "Sf A*", "D/S A*", "Winv tot", "Wo"], data, "casoA")
         plot_values(["Aitot*", "Etot*", "W*", "Sf B*", "D/S B*", "Winv tot", "Wo"], data, "casoB")
 
-        #plt.plot(months, data["Aitot*"], marker='o', label="Aitot*")
-        #plt.plot(months, data["Etot*"], marker='s', label="Etot*")
-        #plt.plot(months, data["W*"], marker='^', label="W*")
-        #plt.plot(months, data["Sf A*"], marker='D', label="Sf A*")
-        #plt.plot(months, data["D/S A*"], marker='x', label="D/S A*")
-        #plt.plot(months, data["Winv tot"]*12, marker='*', label="Winv tot")
-        #plt.plot(months, data["Wo"]*12, marker='P', label="Wo")
-
-        #plt.savefig("casoA_plot.png", format='png', dpi=300)
-
-        #plt.clf()
-        #plt.plot(months, data["Aitot*"], marker='o', label="Aitot*")
-        #plt.plot(months, data["Etot*"], marker='s', label="Etot*")
-        #plt.plot(months, data["W*"], marker='^', label="W*")
-        #plt.plot(months, data["Sf B*"], marker='D', label="Sf B*")
-        #plt.plot(months, data["D/S B*"], marker='x', label="D/S B*")
-        #plt.plot(months, data["Winv tot"]*12, marker='*', label="Winv tot")
-        #plt.plot(months, data["Wo"]*12, marker='P', label="Wo")
-        #plt.savefig("casoB_plot.png", format='png', dpi=300)
-
-        return render_template('dashboard.html', data=data, months=months, plotA="casoA_plot.png", plotB="casoB_plot.png")
+        return render_template('dashboard.html', data=data, months=months, files=files, plotA="casoA_plot.png", plotB="casoB_plot.png")
     elif request.method == 'GET':
-        return render_template('dashboard.html', data=None)
+        return render_template('dashboard.html', data=None, files=files)
 
 def main():
     print("Hello World!")
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=False)
-    #app.run(debug=True)
+    #app.run(host="0.0.0.0", debug=False)
+    app.run(debug=True)

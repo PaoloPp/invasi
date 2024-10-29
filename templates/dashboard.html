@@ -32,7 +32,10 @@
         <h3>Data from JSON</h3>
         <form id="data_select" method="POST">
             <select class="form-select" id="data_select" name="data_select" required>
-                <option value="data.json">data.json</option>
+                <option value="">-- Select a file --</option>
+                    {% for file in files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                    {% endfor %}
             </select>
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">Submit</button>
