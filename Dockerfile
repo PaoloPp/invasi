@@ -12,6 +12,7 @@ RUN mkdir /app/templates
 RUN mkdir /app/templates/css
 RUN mkdir /app/templates/js
 RUN mkdir /app/static
+RUN mkdir elaborazioni
 
 # Copy the dependencies file to the working directory
 COPY requirements.txt .

@@ -11,7 +11,7 @@
             resize: none;
         }
 
-        input[type="number"] {
+        input[type="text" inputmode="numeric"] {
             width: 100%;
         }
     </style>
@@ -38,8 +38,22 @@
         </div>
     </nav>
 
+    <!--<div class="container mt-5 ms-3 me-3">-->
     <div class="container mt-5">
         <h3>Progetto Invasi</h3>
+
+        <form id="data_select" method="POST">
+            <select class="form-select" id="data_select" name="data_select" required>
+                <option value="">Seleziona il file da modificare</option>
+                {% for file in files %}
+                <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+            </select>
+            <div class="text-center">
+                <button type="submit" name="load" value="load" class="btn btn-primary">Carica</button>
+            </div>
+        </form>
+
         <p>Inserisci di seguito i valori necessari al calcolo degli afflussi</p>
 
         {% with messages = get_flashed_messages() %}
@@ -54,7 +68,8 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <input type="text" class="form-control" name="filename" placeholder="Inserisci il nome del file" required>
+                        <input type="text" class="form-control" name="filename" placeholder="Inserisci il nome del file"
+                            required>
                     </tr>
 
                     <br>
@@ -65,18 +80,30 @@
                     <tr>
                         <td colspan="9">
                             <select class="form-select" id="starting" name="starting_month" required>
-                                <option value="January">Gennaio</option>
-                                <option value="February">Febbraio</option>
-                                <option value="March">Marzo</option>
-                                <option value="April">Aprile</option>
-                                <option value="May">Maggio</option>
-                                <option value="June">Giugno</option>
-                                <option value="July">Luglio</option>
-                                <option value="August">Agosto</option>
-                                <option value="September">Settembre</option>
-                                <option value="October">Ottobre</option>
-                                <option value="November">Novembre</option>
-                                <option value="December">Dicembre</option>
+                                <option value="January" {% if data.get('Mese di partenza')=='January' %}selected{% endif
+                                    %}>Gennaio</option>
+                                <option value="February" {% if data.get('Mese di partenza')=='February' %}selected{%
+                                    endif %}>Febbraio</option>
+                                <option value="March" {% if data.get('Mese di partenza')=='March' %}selected{% endif %}>
+                                    Marzo</option>
+                                <option value="April" {% if data.get('Mese di partenza')=='April' %}selected{% endif %}>
+                                    Aprile</option>
+                                <option value="May" {% if data.get('Mese di partenza')=='May' %}selected{% endif %}>
+                                    Maggio</option>
+                                <option value="June" {% if data.get('Mese di partenza')=='June' %}selected{% endif %}>
+                                    Giugno</option>
+                                <option value="July" {% if data.get('Mese di partenza')=='July' %}selected{% endif %}>
+                                    Luglio</option>
+                                <option value="August" {% if data.get('Mese di partenza')=='August' %}selected{% endif
+                                    %}>Agosto</option>
+                                <option value="September" {% if data.get('Mese di partenza')=='September' %}selected{%
+                                    endif %}>Settembre</option>
+                                <option value="October" {% if data.get('Mese di partenza')=='October' %}selected{% endif
+                                    %}>Ottobre</option>
+                                <option value="November" {% if data.get('Mese di partenza')=='November' %}selected{%
+                                    endif %}>Novembre</option>
+                                <option value="December" {% if data.get('Mese di partenza')=='December' %}selected{%
+                                    endif %}>Dicembre</option>
                             </select>
                         </td>
                     </tr>
@@ -93,14 +120,22 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="vol-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="vol-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="vol-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="vol-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="vol-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="vol-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="vol-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="vol-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('S', 0) }}" class="form-control"
+                                name="vol-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Winv tot', 0) }}"
+                                class="form-control" name="vol-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Winv aut', 0) }}"
+                                class="form-control" name="vol-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Wo', 0) }}" class="form-control"
+                                name="vol-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('A', 0) }}" class="form-control"
+                                name="vol-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('A\'', 0) }}" class="form-control"
+                                name="vol-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('P ev', 0) }}"
+                                class="form-control" name="vol-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('P inf', 0) }}"
+                                class="form-control" name="vol-8"></td>
                     </tr>
                 </tbody>
                 <thead>
@@ -111,17 +146,27 @@
                     <th>E<sub>tra</sub></th>
                 </thead>
                 <tbody>
-                    <td><input type="number" value="0" step="0.01" class="form-control" name="vol-9"></td>
-                    <td><input type="number" value="0" step="0.01" class="form-control" name="vol-10"></td>
-                    <td><input type="number" value="0" step="0.01" class="form-control" name="vol-11"></td>
-                    <td><input type="number" value="0" step="0.01" class="form-control" name="vol-12"></td>
-                    <td><input type="number" value="0" step="0.01" class="form-control" name="vol-13"></td>
+                    <td><input type="text" inputmode="numeric" value="{{ data.get('D ec', 0) }}" class="form-control"
+                            name="vol-9">
+                    </td>
+                    <td><input type="text" inputmode="numeric" value="{{ data.get('E pot', 0) }}" class="form-control"
+                            name="vol-10">
+                    </td>
+                    <td><input type="text" inputmode="numeric" value="{{ data.get('E irr', 0) }}" class="form-control"
+                            name="vol-11">
+                    </td>
+                    <td><input type="text" inputmode="numeric" value="{{ data.get('E ind', 0) }}" class="form-control"
+                            name="vol-12">
+                    </td>
+                    <td><input type="text" inputmode="numeric" value="{{ data.get('E tra', 0) }}" class="form-control"
+                            name="vol-13">
+                    </td>
                 </tbody>
             </table>
 
             <br>
 
-            <table class="table table-bordered">
+            <table id="data-table" class="table table-bordered">
                 <thead>
                     <tr>
                         <th>Mese</th>
@@ -140,152 +185,274 @@
                     <!-- Textareas Group 1 --> <!-- coeff-mese-tipo -->
                     <tr>
                         <td>1</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-1-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-1-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-1-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-1-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-1-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-1-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-1-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-1-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-1-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[0] }}"
+                                class="form-control" name="coeff-1-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[0] }}"
+                                class="form-control" name="coeff-1-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[0] }}"
+                                class="form-control" name="coeff-1-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[0] }}"
+                                class="form-control" name="coeff-1-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[0] }}"
+                                class="form-control" name="coeff-1-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[0] }}"
+                                class="form-control" name="coeff-1-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[0] }}"
+                                class="form-control" name="coeff-1-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[0] }}"
+                                class="form-control" name="coeff-1-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[0] }}"
+                                class="form-control" name="coeff-1-9"></td>
                     </tr>
                     <tr>
                         <td>2</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-2-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-2-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-2-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-2-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-2-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-2-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-2-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-2-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-2-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[1] }}"
+                                class="form-control" name="coeff-2-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[1] }}"
+                                class="form-control" name="coeff-2-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[1] }}"
+                                class="form-control" name="coeff-2-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[1] }}"
+                                class="form-control" name="coeff-2-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[1] }}"
+                                class="form-control" name="coeff-2-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[1] }}"
+                                class="form-control" name="coeff-2-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[1] }}"
+                                class="form-control" name="coeff-2-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[1] }}"
+                                class="form-control" name="coeff-2-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[1] }}"
+                                class="form-control" name="coeff-2-9"></td>
                     </tr>
                     <tr>
                         <td>3</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-3-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-3-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-3-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-3-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-3-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-3-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-3-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-3-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-3-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[2] }}"
+                                class="form-control" name="coeff-3-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[2] }}"
+                                class="form-control" name="coeff-3-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[2] }}"
+                                class="form-control" name="coeff-3-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[2] }}"
+                                class="form-control" name="coeff-3-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[2] }}"
+                                class="form-control" name="coeff-3-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[2] }}"
+                                class="form-control" name="coeff-3-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[2] }}"
+                                class="form-control" name="coeff-3-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[2] }}"
+                                class="form-control" name="coeff-3-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[2] }}"
+                                class="form-control" name="coeff-3-9"></td>
                     </tr>
 
                     <!-- Textareas Group 2 -->
                     <tr>
                         <td>4</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-4-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-4-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-4-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-4-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-4-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-4-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-4-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-4-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-4-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[3] }}"
+                                class="form-control" name="coeff-4-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[3] }}"
+                                class="form-control" name="coeff-4-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[3] }}"
+                                class="form-control" name="coeff-4-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[3] }}"
+                                class="form-control" name="coeff-4-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[3] }}"
+                                class="form-control" name="coeff-4-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[3] }}"
+                                class="form-control" name="coeff-4-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[3] }}"
+                                class="form-control" name="coeff-4-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[3] }}"
+                                class="form-control" name="coeff-4-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[3] }}"
+                                class="form-control" name="coeff-4-9"></td>
                     </tr>
                     <tr>
                         <td>5</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-5-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-5-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-5-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-5-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-5-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-5-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-5-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-5-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-5-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[4] }}"
+                                class="form-control" name="coeff-5-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[4] }}"
+                                class="form-control" name="coeff-5-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[4] }}"
+                                class="form-control" name="coeff-5-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[4] }}"
+                                class="form-control" name="coeff-5-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[4] }}"
+                                class="form-control" name="coeff-5-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[4] }}"
+                                class="form-control" name="coeff-5-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[4] }}"
+                                class="form-control" name="coeff-5-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[4] }}"
+                                class="form-control" name="coeff-5-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[4] }}"
+                                class="form-control" name="coeff-5-9"></td>
                     </tr>
                     <tr>
                         <td>6</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-6-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-6-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-6-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-6-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-6-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-6-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-6-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-6-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-6-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[5] }}"
+                                class="form-control" name="coeff-6-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[5] }}"
+                                class="form-control" name="coeff-6-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[5] }}"
+                                class="form-control" name="coeff-6-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[5] }}"
+                                class="form-control" name="coeff-6-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[5] }}"
+                                class="form-control" name="coeff-6-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[5] }}"
+                                class="form-control" name="coeff-6-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[5] }}"
+                                class="form-control" name="coeff-6-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[5] }}"
+                                class="form-control" name="coeff-6-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[5] }}"
+                                class="form-control" name="coeff-6-9"></td>
                     </tr>
                     <tr>
                         <td>7</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-7-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-7-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-7-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-7-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-7-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-7-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-7-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-7-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-7-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[6] }}"
+                                class="form-control" name="coeff-7-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[6] }}"
+                                class="form-control" name="coeff-7-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[6] }}"
+                                class="form-control" name="coeff-7-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[6] }}"
+                                class="form-control" name="coeff-7-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[6] }}"
+                                class="form-control" name="coeff-7-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[6] }}"
+                                class="form-control" name="coeff-7-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[6] }}"
+                                class="form-control" name="coeff-7-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[6] }}"
+                                class="form-control" name="coeff-7-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[6] }}"
+                                class="form-control" name="coeff-7-9"></td>
                     </tr>
                     <tr>
                         <td>8</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-8-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-8-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-8-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-8-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-8-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-8-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-8-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-8-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-8-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[7] }}"
+                                class="form-control" name="coeff-8-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[7] }}"
+                                class="form-control" name="coeff-8-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[7] }}"
+                                class="form-control" name="coeff-8-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[7] }}"
+                                class="form-control" name="coeff-8-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[7] }}"
+                                class="form-control" name="coeff-8-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[7] }}"
+                                class="form-control" name="coeff-8-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[7] }}"
+                                class="form-control" name="coeff-8-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[7] }}"
+                                class="form-control" name="coeff-8-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[7] }}"
+                                class="form-control" name="coeff-8-9"></td>
                     </tr>
                     <tr>
                         <td>9</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-9-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-9-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-9-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-9-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-9-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-9-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-9-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-9-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-9-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[8] }}"
+                                class="form-control" name="coeff-9-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[8] }}"
+                                class="form-control" name="coeff-9-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[8] }}"
+                                class="form-control" name="coeff-9-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[8] }}"
+                                class="form-control" name="coeff-9-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[8] }}"
+                                class="form-control" name="coeff-9-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[8] }}"
+                                class="form-control" name="coeff-9-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[8] }}"
+                                class="form-control" name="coeff-9-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[8] }}"
+                                class="form-control" name="coeff-9-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[8] }}"
+                                class="form-control" name="coeff-9-9"></td>
                     </tr>
                     <tr>
                         <td>10</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-10-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-10-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-10-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-10-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-10-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-10-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-10-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-10-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-10-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[9] }}"
+                                class="form-control" name="coeff-10-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[9] }}"
+                                class="form-control" name="coeff-10-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[9] }}"
+                                class="form-control" name="coeff-10-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[9] }}"
+                                class="form-control" name="coeff-10-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[9] }}"
+                                class="form-control" name="coeff-10-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[9] }}"
+                                class="form-control" name="coeff-10-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[9] }}"
+                                class="form-control" name="coeff-10-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[9] }}"
+                                class="form-control" name="coeff-10-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[9] }}"
+                                class="form-control" name="coeff-10-9"></td>
                     </tr>
                     <tr>
                         <td>11</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-11-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-11-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-11-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-11-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-11-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-11-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-11-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-11-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-11-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[10] }}"
+                                class="form-control" name="coeff-11-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[10] }}"
+                                class="form-control" name="coeff-11-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[10] }}"
+                                class="form-control" name="coeff-11-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[10] }}"
+                                class="form-control" name="coeff-11-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[10] }}"
+                                class="form-control" name="coeff-11-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[10] }}"
+                                class="form-control" name="coeff-11-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[10] }}"
+                                class="form-control" name="coeff-11-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[10] }}"
+                                class="form-control" name="coeff-11-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[10] }}"
+                                class="form-control" name="coeff-11-9"></td>
                     </tr>
                     <tr>
                         <td>12</td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-12-1"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-12-2"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-12-3"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-12-4"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-12-5"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-12-6"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-12-7"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-12-8"></td>
-                        <td><input type="number" value="0" step="0.01" class="form-control" name="coeff-12-9"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A)', 0)[11] }}"
+                                class="form-control" name="coeff-12-1"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(A\')', 0)[11] }}"
+                                class="form-control" name="coeff-12-2"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ev)', 0)[11] }}"
+                                class="form-control" name="coeff-12-3"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(inf)', 0)[11] }}"
+                                class="form-control" name="coeff-12-4"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ec)', 0)[11] }}"
+                                class="form-control" name="coeff-12-5"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(pot)', 0)[11] }}"
+                                class="form-control" name="coeff-12-6"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(irr)', 0)[11] }}"
+                                class="form-control" name="coeff-12-7"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(ind)', 0)[11] }}"
+                                class="form-control" name="coeff-12-8"></td>
+                        <td><input type="text" inputmode="numeric" value="{{ data.get('Cj(tra)', 0)[11] }}"
+                                class="form-control" name="coeff-12-9"></td>
                     </tr>
+                <tfoot>
+                    <tr id="totals-row">
+                        <td>Total</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
 
-                    <!-- Additional rows can follow the same structure -->
+                <!-- Additional rows can follow the same structure -->
                 </tbody>
             </table>
 
@@ -294,9 +461,40 @@
                 <button type="submit" class="btn btn-primary">Submit</button>
             </div>
         </form>
+        <div><button id="validate" name="validate" class="btn btn-secondary">Validate</button></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function calculateColumnSums() {
+            const table = document.getElementById("data-table");
+            const rows = table.getElementsByTagName("tbody")[0].rows;
+            const numColumns = rows[0].cells.length;
+
+            // Initialize an array to hold the sum of each column
+            const columnSums = Array(numColumns).fill(0);
+
+            // Calculate the sum for each column
+            for (let i = 0; i < rows.length; i++) {
+                for (let j = 1; j < numColumns; j++) {  // Start from 1 to skip the first column (Item names)
+                    const input = rows[i].cells[j].getElementsByTagName("input")[0];
+                    const cellValue = parseFloat(input.value);
+                    if (!isNaN(cellValue)) {
+                        columnSums[j] += cellValue;
+                    }
+                }
+            }
+
+            // Insert the sums into the footer row
+            const totalsRow = document.getElementById("totals-row");
+            for (let j = 1; j < numColumns; j++) {  // Start from 1 to skip the first column
+                totalsRow.cells[j].innerText = columnSums[j].toFixed(2);  // Display with 2 decimal places
+            }
+        }
+
+        // Add event listener to the button to calculate sums on click
+        document.getElementById('validate').addEventListener('click', calculateColumnSums);
+    </script>
 </body>
 
 </html>

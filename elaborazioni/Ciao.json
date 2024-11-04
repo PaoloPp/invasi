@@ -1,5 +1,5 @@
 {
-    "Mese di partenza": "January",
+    "Mese di partenza": "March",
     "S": 0.0,
     "Winv tot": 2.0,
     "Winv aut": 2.0,
@@ -14,7 +14,7 @@
     "E ind": 0.0,
     "E tra": 0.0,
     "Cj(A)": [
-        0.0,
+        0.1,
         0.0,
         0.0,
         0.0,

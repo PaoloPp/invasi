@@ -1,6 +1,6 @@
 {
     "invasi": {
-        "image": ":invasi-flask-service.invasi-flask-container.2",
+        "image": ":invasi-flask-service.invasi-flask-container.4",
         "ports": {
             "5000": "HTTP"
         }
