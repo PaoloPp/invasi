@@ -145,12 +145,10 @@ def form():
     getcontext().prec = 2
     data = {}
     if request.method == 'POST' and 'load' in request.form:
-        print(request.form.get("data_select"))
         filename = request.form.get("data_select")
         if filename:
             with open(f"elaborazioni/{filename}", 'r') as json_file:
                 data = json.load(json_file)
-                print(data)
             # Render form with loaded data
             return render_template('form.html', files=files, data=data)
 
@@ -192,5 +190,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # app.run(host="0.0.0.0", debug=False)
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=False)
+    #app.run(debug=True)
