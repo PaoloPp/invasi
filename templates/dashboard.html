@@ -239,31 +239,31 @@
             <table class="table table-bordered table-striped">
                 <thead>
                     <th>Mese</th>
-                    <th>Wi A*</th>
-                    <th>Wi B*</th>
-                    <th>Sf A</th>
-                    <th>Sf A*</th>
-                    <th>Sf B</th>
-                    <th>Sf B*</th>
-                    <th>D/S A j</th>
-                    <th>D/S A *</th>
-                    <th>D/S B j</th>
-                    <th>D/S B *</th>
+                    <th>Wi 1*</th>
+                    <th>Wi 2*</th>
+                    <th>Sf 1</th>
+                    <th>Sf 1*</th>
+                    <th>Sf 2</th>
+                    <th>Sf 2*</th>
+                    <th>D/S 1 j</th>
+                    <th>D/S 1 *</th>
+                    <th>D/S 2 j</th>
+                    <th>D/S 2 *</th>
                 </thead>
                 <tbody>
                     {% for i in range(data['A j']|length) %}
                     <tr>
                         <td>{{ months[i] }}</td>
-                        <td>{{ data["Wi A*"][i] }}</td>
-                        <td>{{ data["Wi B*"][i] }}</td>
-                        <td>{{ data["Sf A"][i] }}</td>
-                        <td>{{ data["Sf A*"][i] }}</td>
-                        <td>{{ data["Sf B"][i] }}</td>
-                        <td>{{ data["Sf B*"][i] }}</td>
-                        <td>{{ data["D/S A j"][i] }}</td>
-                        <td>{{ data["D/S A*"][i] }}</td>
-                        <td>{{ data["D/S B j"][i] }}</td>
-                        <td>{{ data["D/S B*"][i] }}</td>
+                        <td>{{ data["Wi 1*"][i] }}</td>
+                        <td>{{ data["Wi 2*"][i] }}</td>
+                        <td>{{ data["Sf 1"][i] }}</td>
+                        <td>{{ data["Sf 1*"][i] }}</td>
+                        <td>{{ data["Sf 2"][i] }}</td>
+                        <td>{{ data["Sf 2*"][i] }}</td>
+                        <td>{{ data["D/S 1 j"][i] }}</td>
+                        <td>{{ data["D/S 1*"][i] }}</td>
+                        <td>{{ data["D/S 2 j"][i] }}</td>
+                        <td>{{ data["D/S 2*"][i] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

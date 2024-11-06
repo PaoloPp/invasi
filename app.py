@@ -63,12 +63,12 @@ def process_data(request):
     values_wi = []
     values_Wi = []
     values_Wistar = []
-    values_Wia = []
-    values_Wib = []
-    values_sfa = []
-    values_sfb = []
-    values_deficitA = []
-    values_deficitB = []
+    values_Wi1 = []
+    values_Wi2 = []
+    values_sf1 = []
+    values_sf2 = []
+    values_deficit1 = []
+    values_deficit2 = []
     data["Filename"] = request.form.get("filename")
     data["Mese di partenza"] = request.form.get('starting_month')
 
@@ -109,33 +109,37 @@ def process_data(request):
     data["W*"] = values_Wistar
     for i in range(0, 12):
         if (data["W*"][i] < data["Winv tot"]):
-            values_Wia.append(data["W*"][i])
+            values_Wi1.append(data["W*"][i])
         else:
-            values_Wia.append(data["Winv tot"])
-        if (values_Wia[i] < data["Winv tot"]):
-            values_sfa.append('0')
-        else:
-            values_sfa.append(data["w j"][i])
+            values_Wi1.append(data["Winv tot"])
+
+        if (values_Wi1[i] < data["Winv tot"]) or (data["w j"][i] < 0):
+            values_sf1.append(0)
+        else: 
+            values_sf1.append(data["w j"][i])
+
         if (data["W*"][i] < data["Winv aut"]):
-            values_Wib.append(data["W*"][i])
+            values_Wi2.append(data["W*"][i])
         else:
-            values_Wib.append(data["Winv aut"])
-        if (values_Wib[i] < data["Winv aut"]):
-            values_sfb.append('0')
+            values_Wi2.append(data["Winv aut"])
+
+        if (values_Wi2[i] < data["Winv aut"]) or (data["w j"][i] < 0):
+            values_sf2.append('0')
         else:
-            values_sfb.append(data["w j"][i])
-        values_deficitA.append(float(data["w j"][i] - float(values_sfa[i])))
-        values_deficitB.append(float(data["w j"][i] - float(values_sfb[i])))
-    data["Wi A*"] = values_Wia
-    data["Wi B*"] = values_Wib
-    data["Sf A"] = values_sfa
-    data["Sf B"] = values_sfb
-    data["Sf A*"] = somma_cumulata(data["Sf A"])
-    data["Sf B*"] = somma_cumulata(data["Sf B"])
-    data["D/S A j"] = values_deficitA
-    data["D/S B j"] = values_deficitB
-    data["D/S A*"] = somma_cumulata(data["D/S A j"])
-    data["D/S B*"] = somma_cumulata(data["D/S B j"])
+            values_sf2.append(data["w j"][i])
+
+        values_deficit1.append(float(data["w j"][i] - float(values_sf1[i])))
+        values_deficit2.append(float(data["w j"][i] - float(values_sf1[i])))
+    data["Wi 1*"] = values_Wi1
+    data["Wi 2*"] = values_Wi2
+    data["Sf 1"] = values_sf1
+    data["Sf 2"] = values_sf2
+    data["Sf 1*"] = somma_cumulata(data["Sf 1"])
+    data["Sf 2*"] = somma_cumulata(data["Sf 2"])
+    data["D/S 1 j"] = values_deficit1
+    data["D/S 2 j"] = values_deficit2
+    data["D/S 1*"] = somma_cumulata(data["D/S 1 j"])
+    data["D/S 2*"] = somma_cumulata(data["D/S 2 j"])
 
     return data
 
@@ -176,12 +180,12 @@ def dashboard():
         data = round_floats(data)
         months = set_year(data["Mese di partenza"])
 
-        plot_values(["Aitot*", "Etot*", "W*", "Sf A*",
-                    "D/S A*", "Winv tot", "Wo"], data, "casoA")
-        plot_values(["Aitot*", "Etot*", "W*", "Sf B*",
-                    "D/S B*", "Winv tot", "Wo"], data, "casoB")
+        plot_values(["Aitot*", "Etot*", "W*", "Sf 1*",
+                    "D/S 1*", "Winv tot", "Wo"], data, "caso1")
+        plot_values(["Aitot*", "Etot*", "W*", "Sf 2*",
+                    "D/S 2*", "Winv tot", "Wo"], data, "caso2")
 
-        return render_template('dashboard.html', data=data, months=months, files=files, plotA="casoA_plot.png", plotB="casoB_plot.png")
+        return render_template('dashboard.html', data=data, months=months, files=files, plotA="caso1_plot.png", plotB="caso2_plot.png")
     elif request.method == 'GET':
         return render_template('dashboard.html', data=None, files=files)
 
