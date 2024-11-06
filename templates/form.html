@@ -43,7 +43,7 @@
         <h3>Progetto Invasi</h3>
 
         <form id="data_select" method="POST">
-            <select class="form-select" id="data_select" name="data_select" required>
+            <select class="form-select" id="filenameToModify" name="data_select" required onchange="setFileName()">
                 <option value="">Seleziona il file da modificare</option>
                 {% for file in files %}
                 <option value="{{ file }}">{{ file }}</option>
@@ -68,8 +68,8 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <input type="text" class="form-control" name="filename" placeholder="Inserisci il nome del file"
-                            required>
+                        <input type="text" id="filenameToSelect" class="form-control" name="filename" placeholder="Inserisci il nome del file"
+                            value=" {{ data.get('Filename') }}" required>
                     </tr>
 
                     <br>
@@ -514,7 +514,6 @@
             });
         });
     </script>
-        
 </body>
 
 </html>

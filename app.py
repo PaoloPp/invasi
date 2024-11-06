@@ -69,6 +69,7 @@ def process_data(request):
     values_sfb = []
     values_deficitA = []
     values_deficitB = []
+    data["Filename"] = request.form.get("filename")
     data["Mese di partenza"] = request.form.get('starting_month')
 
     for v in vol:
@@ -190,5 +191,5 @@ def main():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=False)
-    #app.run(debug=True)
+    #app.run(host="0.0.0.0", debug=False)
+    app.run(debug=True)
