@@ -17,6 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from flask_login import LoginManager,login_user,UserMixin,login_required,logout_user,current_user
 from flask_mail import Mail,Message
 from itsdangerous import URLSafeTimedSerializer
+from functools import wraps
 
 
 
@@ -227,8 +228,19 @@ def process_data(request):
 
     return data
 
+#definisco il decorator che utilizzerò per evitare che un utente loggato (quindi in sessione) visualizzi pagine di login e registrazione 
+def redirect_authenticated_user(function): #wrapper function (wrapped function)
+    @wraps(function)  #serve a preservare nome e docstring della wrapped function (quindi login e registrazione) utile esempio per il debug
+    def check_authentication(*args,**kwargs): #è la vera funzione wrapper che sostituisce quella originale quando applichiamo il decoratore a una rotta,gli argomenti *args e **kwargs passano qualsiasi parametro dalla funzione originale alla wrapper.
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard'))
+        else:
+            return function(*args,**kwargs)
+    return check_authentication
+
 ################
 @app.route('/' , methods=['GET','POST'])
+@redirect_authenticated_user
 def register():
     if request.method=="POST":
         #prendere username e password dai form 
@@ -282,6 +294,7 @@ def verify_email(token):
     return redirect(url_for('login'))
 
 @app.route("/login", methods=['GET','POST'])
+@redirect_authenticated_user
 def login():
     if request.method=="POST":
         username=request.form['username']
@@ -300,7 +313,7 @@ def login():
         
     return render_template('signin.html')
 
-@app.route('/logout') #,methods=['POST'] quando implemento il bottone
+@app.route('/logout') 
 @login_required
 def logout():
     logout_user()
@@ -316,39 +329,53 @@ def form():
     files = get_user_files()
     getcontext().prec = 2
     data = {}
-    if request.method == 'POST' and 'load' in request.form:
-        filename = request.form.get("data_select")
-        if filename:
-            #with open(f"elaborazioni/{filename}", 'r') as json_file:
-            #    data = json.load(json_file)
-            json_data=get_json(filename)
-            data=json.loads(json_data)
-            # Render form with loaded data
-            return render_template('form.html', files=files, data=data)
-
-    elif request.method == 'POST':
-        #Creazione del file json all'interno della cartella elaborazioni
-        #data = process_data(request)
-        #with open("elaborazioni/" + request.form.get("filename") + ".json", 'w') as json_file:
-        #    json.dump(data, json_file, indent=4)
-        if current_user.is_authenticated:
-            json_filename=request.form.get('filename')
-            data = process_data(request)
-            check_filename=db.session.execute(select(JsonFile).filter(JsonFile.user_id == current_user.id, JsonFile.filename == json_filename)).scalar_one_or_none()
-            if check_filename:
+    if request.method == 'POST':
+        if 'load' in request.form:
+            filename = request.form.get("data_select")
+            if filename:
+                #with open(f"elaborazioni/{filename}", 'r') as json_file:
+                #    data = json.load(json_file)
+                json_data=get_json(filename)
+                data=json.loads(json_data)
+                # Render form with loaded data
+                return render_template('form.html', files=files, data=data)
+        elif 'delete' in request.form:
+            # Eliminazione del file
+            filename = request.form.get("data_select")
+            if filename:
+                # Recupera il file dal database e verifica se esiste
+                file_to_delete = db.session.execute(select(JsonFile).filter(JsonFile.user_id == current_user.id, JsonFile.filename == filename)).scalar()
                 
-                check_filename.json_data=json.dumps(data)
-                db.session.commit()
+                if file_to_delete:
+                    db.session.delete(file_to_delete)
+                    db.session.commit()
+                    flash(f'File "{filename}" eliminato con successo!', 'success')
+                else:
+                    flash(f'File "{filename}" non trovato.', 'danger')
                 return redirect('form')
-            else: 
-                json_file = JsonFile(
-                     filename=json_filename, 
-                     json_data=json.dumps(data), 
-                     user_id=current_user.id)
-                db.session.add(json_file)
-                db.session.commit()
-                flash('Form successfully submitted!', 'success')
-                return redirect('form') 
+        else:
+            #Creazione del file json all'interno della cartella elaborazioni
+            #data = process_data(request)
+            #with open("elaborazioni/" + request.form.get("filename") + ".json", 'w') as json_file:
+            #    json.dump(data, json_file, indent=4)
+            if current_user.is_authenticated:
+                json_filename=request.form.get('filename')
+                data = process_data(request)
+                check_filename=db.session.execute(select(JsonFile).filter(JsonFile.user_id == current_user.id, JsonFile.filename == json_filename)).scalar_one_or_none()
+                if check_filename:
+                    
+                    check_filename.json_data=json.dumps(data)
+                    db.session.commit()
+                    return redirect('form')
+                else: 
+                    json_file = JsonFile(
+                        filename=json_filename, 
+                        json_data=json.dumps(data), 
+                        user_id=current_user.id)
+                    db.session.add(json_file)
+                    db.session.commit()
+                    flash('Form successfully submitted!', 'success')
+                    return redirect('form') 
     elif request.method == 'GET':
         return render_template('form.html', data=data, files=files)
 
