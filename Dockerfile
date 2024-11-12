@@ -13,6 +13,8 @@ RUN mkdir /app/templates/css
 RUN mkdir /app/templates/js
 RUN mkdir /app/static
 RUN mkdir elaborazioni
+RUN mkdir var
+RUN mkdir var/app-instance
 
 # Copy the dependencies file to the working directory
 COPY requirements.txt .
@@ -21,6 +23,7 @@ COPY requirements.txt .
 RUN pip3 install -r requirements.txt
 
 # Copy the content of the local src directory to the working directory
+COPY var/app-instance/invasi.db ./var/app-instance/invasi.db
 COPY app.py .
 COPY round_floats.py .
 COPY set_year.py .

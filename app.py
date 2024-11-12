@@ -4,74 +4,90 @@ import matplotlib
 import matplotlib.pyplot as plt
 # import pandas as pd
 import simplejson as json
-from flask import Flask, render_template, request, flash, redirect, url_for
+from http import HTTPStatus
+from flask import Flask, render_template, request, flash, redirect, url_for, abort
 from itertools import cycle
 from decimal import Decimal, getcontext
 from set_year import set_year
 from round_floats import round_floats
-from werkzeug.security import generate_password_hash,check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Integer,String,Column,exists,select,Text,ForeignKey,Boolean
+from sqlalchemy import Integer, String, Column, exists, select, Text, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
-from flask_login import LoginManager,login_user,UserMixin,login_required,logout_user,current_user
-from flask_mail import Mail,Message
+from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user, current_user
+from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 from functools import wraps
-
-
+import secret as s
 
 matplotlib.use('Agg')
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
 ################
-#configuro flask mail
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'  
+# configuro flask mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
-app.config['MAIL_USERNAME'] = 'antoniolakee13@gmail.com'  
-app.config['MAIL_PASSWORD'] = 'qndg aiod puhw wmzi'        
-app.config['MAIL_USE_TLS'] =True
-app.config['MAIL_USE_SSL']=False
+app.config['MAIL_USERNAME'] = s.MAIL_USERNAME
+app.config['MAIL_PASSWORD'] = s.MAIL_PASSWORD
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
 
-mail=Mail(app)
-#configuro sqlalchemy e creo l'ogetto db 
+mail = Mail(app)
+# configuro sqlalchemy e creo l'ogetto db
 
-app.config["SQLALCHEMY_DATABASE_URI"]="sqlite:///invasi.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]=False
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///invasi.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-class Base(DeclarativeBase):  
+
+class Base(DeclarativeBase):
     pass
 
-#Gestione connessione DB
-db=SQLAlchemy(model_class=Base)
-login_manager=LoginManager()
+
+# Gestione connessione DB
+db = SQLAlchemy(model_class=Base)
+login_manager = LoginManager()
 login_manager.init_app(app)
 
 
-#creo i modelli del database
-class User(UserMixin,db.Model):
-    id : Mapped[int] = mapped_column(Integer,primary_key=True)  
-    username : Mapped[str] = mapped_column(String(25),nullable=False,unique=True)
-    password: Mapped[str]=mapped_column(String(150),nullable=False)
-    is_active: Mapped[bool]=mapped_column(Boolean,default=False) 
+@login_manager.unauthorized_handler
+def unauthorized():
+    if request.blueprint == 'api':
+        abort(HTTPStatus.UNAUTHORIZED)
+    return redirect(url_for('login'))
 
 
-class JsonFile(UserMixin,db.Model):
-    id:Mapped[int] = mapped_column(Integer,primary_key=True)
-    filename:Mapped[str]=mapped_column(String(120),nullable=True,unique=True)
-    json_data:Mapped[str]=mapped_column(Text,nullable=False)
-    user_id:Mapped[int]=mapped_column(ForeignKey('user.id'),nullable=False)
+# creo i modelli del database
+class User(UserMixin, db.Model):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(
+        String(25), nullable=False, unique=True)
+    password: Mapped[str] = mapped_column(String(150), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class JsonFile(UserMixin, db.Model):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    filename: Mapped[str] = mapped_column(
+        String(120), nullable=True, unique=True)
+    json_data: Mapped[str] = mapped_column(Text, nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
+
 
 @login_manager.user_loader
 def loader_user(user_id):
     return User.query.get(user_id)
 
+
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
-#Invia mail di verifica
+# Invia mail di verifica
+
+
 def genera_token_di_verifica(email):
     return s.dumps(email, salt='email-confirmation')
+
 
 def conferma_token(token, expiration=600):
     try:
@@ -80,16 +96,18 @@ def conferma_token(token, expiration=600):
         return False
     return email
 
+
 def invio_email_di_verifica(user_email):
     token = genera_token_di_verifica(user_email)
     url_di_verifica = url_for('verify_email', token=token, _external=True)
     subject = "Conferma email"
-    html_body = render_template('verifica_email.html', url_di_verifica=url_di_verifica)
-    msg = Message(subject=subject,sender='antoniolakee13@gmail.com', recipients=[user_email],html=html_body)
+    html_body = render_template(
+        'verifica_email.html', url_di_verifica=url_di_verifica)
+    msg = Message(subject=subject, sender='antoniolakee13@gmail.com',
+                  recipients=[user_email], html=html_body)
     mail.send(msg)
 
 ################
-
 
 
 def plot_values(_label, _data, _name):
@@ -125,13 +143,18 @@ def retrive_files():
     files = [f for f in files if f.endswith('.json')]
     return files
 
-#Recupera i file associati all'utente in sessione dal DB
+# Recupera i file associati all'utente in sessione dal DB
+
+
 def get_user_files():
     return db.session.execute(db.select(JsonFile.filename).filter_by(user_id=current_user.id)).scalars().all()
 
-#recupera il contenuto ndel campo json__data utilizzando il nome del file 
+# recupera il contenuto ndel campo json__data utilizzando il nome del file
+
+
 def get_json(filename_selected):
     return db.session.execute(db.select(JsonFile.json_data).filter_by(filename=filename_selected)).scalar()
+
 
 def process_data(request):
     vol = ["S", "Winv tot", "Winv aut", "Wo", "A", "A'", "P ev",
@@ -156,6 +179,8 @@ def process_data(request):
     values_deficit2 = []
     data["Filename"] = request.form.get("filename")
     data["Mese di partenza"] = request.form.get('starting_month')
+    data["A tra"] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    data["A* tra"] = somma_cumulata(data["A tra"])
 
     for v in vol:
         data[v] = float(request.form.get(f'vol-{vol.index(v) + 1}'))
@@ -200,7 +225,7 @@ def process_data(request):
 
         if (values_Wi1[i] < data["Winv tot"]) or (data["w j"][i] < 0):
             values_sf1.append(0)
-        else: 
+        else:
             values_sf1.append(data["w j"][i])
 
         if (data["W*"][i] < data["Winv aut"]):
@@ -228,92 +253,105 @@ def process_data(request):
 
     return data
 
-#definisco il decorator che utilizzerò per evitare che un utente loggato (quindi in sessione) visualizzi pagine di login e registrazione 
-def redirect_authenticated_user(function): #wrapper function (wrapped function)
-    @wraps(function)  #serve a preservare nome e docstring della wrapped function (quindi login e registrazione) utile esempio per il debug
-    def check_authentication(*args,**kwargs): #è la vera funzione wrapper che sostituisce quella originale quando applichiamo il decoratore a una rotta,gli argomenti *args e **kwargs passano qualsiasi parametro dalla funzione originale alla wrapper.
+# definisco il decorator che utilizzerò per evitare che un utente loggato (quindi in sessione) visualizzi pagine di login e registrazione
+
+
+# wrapper function (wrapped function)
+def redirect_authenticated_user(function):
+    # serve a preservare nome e docstring della wrapped function (quindi login e registrazione) utile esempio per il debug
+    @wraps(function)
+    # è la vera funzione wrapper che sostituisce quella originale quando applichiamo il decoratore a una rotta,gli argomenti *args e **kwargs passano qualsiasi parametro dalla funzione originale alla wrapper.
+    def check_authentication(*args, **kwargs):
         if current_user.is_authenticated:
             return redirect(url_for('dashboard'))
         else:
-            return function(*args,**kwargs)
+            return function(*args, **kwargs)
     return check_authentication
 
 ################
-@app.route('/' , methods=['GET','POST'])
+
+
+@app.route('/', methods=['GET', 'POST'])
 @redirect_authenticated_user
 def register():
-    if request.method=="POST":
-        #prendere username e password dai form 
-        hash=generate_password_hash(request.form['password'])
+    if request.method == "POST":
+        # prendere username e password dai form
+        hash = generate_password_hash(request.form['password'])
         print(hash)
-        user=User(
-            username=request.form['username'],
-            password=hash
+        user = User(
+            username = request.form['username'].lower(),
+            password = hash
         )
-        query_check=db.session.execute(select(exists().where(User.username==user.username))).scalar()
-        #print(query_check)
+        query_check = db.session.execute(
+            select(exists().where(User.username.lower() == user.username))).scalar()
+        # print(query_check)
         if query_check:
-            flash ('Username già esistente')
+            flash('Username già esistente')
             return redirect(url_for('register'))
         else:
-          db.session.add(user)
-          db.session.commit()  
-          invio_email_di_verifica(user.username)
+            db.session.add(user)
+            db.session.commit()
+            invio_email_di_verifica(user.username)
         return render_template('signup.html')
-    
+
     return render_template('signup.html')
 
-@app.route('/verify/<token>') # GET
+
+@app.route('/verify/<token>')  # GET
 def verify_email(token):
-    
-    email = conferma_token(token) #Decodifico il token per ottenere l'email
-    
+
+    email = conferma_token(token)  # Decodifico il token per ottenere l'email
+
     if not email:
-        #flash("Il link di verifica è non valido o scaduto.", "danger")
+        # flash("Il link di verifica è non valido o scaduto.", "danger")
         print('Il link di verifica è non valido o scaduto')
         return redirect(url_for('register'))
-    
-    user = db.session.execute(select(User).filter_by(username=email)).scalar_one_or_none() 
+
+    user = db.session.execute(select(User).filter_by(
+        username=email)).scalar_one_or_none()
     # Recupera l'utente dal database usando l'email decodificata da conferma_token
-    
+
     if user is None:
-        #flash("Utente non trovato.", "danger")
+        # flash("Utente non trovato.", "danger")
         print('utente non trovato')
         return redirect(url_for('register'))
-    
+
     if user.is_active:
-        #flash("Account già verificato. Puoi effettuare il login.", "info")
+        # flash("Account già verificato. Puoi effettuare il login.", "info")
         print('account già verificato')
     else:
         # Imposto is_active a True e committo
         user.is_active = True
         db.session.commit()
-        #flash("Account verificato con successo! Ora puoi effettuare il login.", "success")
+        # flash("Account verificato con successo! Ora puoi effettuare il login.", "success")
         print('Account verificato con successo! Ora puoi effettuare il login.')
-    
+
     return redirect(url_for('login'))
 
-@app.route("/login", methods=['GET','POST'])
+
+@app.route("/login", methods=['GET', 'POST'])
 @redirect_authenticated_user
 def login():
-    if request.method=="POST":
-        username=request.form['username']
-        password=request.form['password']
-    
-        user=db.first_or_404(db.select(User).filter_by(username=username)) #restituisce il primo risultato trovato, se non vi è alcun risultato genera un errore 404
-        validate=check_password_hash(user.password,password)
+    if request.method == "POST":
+        username = request.form['username'].lower()
+        password = request.form['password']
+
+        # restituisce il primo risultato trovato, se non vi è alcun risultato genera un errore 404
+        user = db.first_or_404(db.select(User).filter_by(username=username))
+        validate = check_password_hash(user.password, password)
         print(validate)
-        if validate==True and user.is_active==True:
-            login_user(user) 
-            
+        if validate == True and user.is_active == True:
+            login_user(user)
+
             return redirect(url_for('dashboard'))
         else:
             flash('email o password non valide')
             redirect(url_for('login'))
-        
+
     return render_template('signin.html')
 
-@app.route('/logout') 
+
+@app.route('/logout')
 @login_required
 def logout():
     logout_user()
@@ -325,7 +363,7 @@ def logout():
 @app.route('/form', methods=['GET', 'POST'])
 @login_required
 def form():
-    #files = retrive_files()
+    # files = retrive_files()
     files = get_user_files()
     getcontext().prec = 2
     data = {}
@@ -333,10 +371,10 @@ def form():
         if 'load' in request.form:
             filename = request.form.get("data_select")
             if filename:
-                #with open(f"elaborazioni/{filename}", 'r') as json_file:
+                # with open(f"elaborazioni/{filename}", 'r') as json_file:
                 #    data = json.load(json_file)
-                json_data=get_json(filename)
-                data=json.loads(json_data)
+                json_data = get_json(filename)
+                data = json.loads(json_data)
                 # Render form with loaded data
                 return render_template('form.html', files=files, data=data)
         elif 'delete' in request.form:
@@ -344,38 +382,41 @@ def form():
             filename = request.form.get("data_select")
             if filename:
                 # Recupera il file dal database e verifica se esiste
-                file_to_delete = db.session.execute(select(JsonFile).filter(JsonFile.user_id == current_user.id, JsonFile.filename == filename)).scalar()
-                
+                file_to_delete = db.session.execute(select(JsonFile).filter(
+                    JsonFile.user_id == current_user.id, JsonFile.filename == filename)).scalar()
+
                 if file_to_delete:
                     db.session.delete(file_to_delete)
                     db.session.commit()
-                    flash(f'File "{filename}" eliminato con successo!', 'success')
+                    flash(
+                        f'File "{filename}" eliminato con successo!', 'success')
                 else:
                     flash(f'File "{filename}" non trovato.', 'danger')
                 return redirect('form')
         else:
-            #Creazione del file json all'interno della cartella elaborazioni
-            #data = process_data(request)
-            #with open("elaborazioni/" + request.form.get("filename") + ".json", 'w') as json_file:
+            # Creazione del file json all'interno della cartella elaborazioni
+            # data = process_data(request)
+            # with open("elaborazioni/" + request.form.get("filename") + ".json", 'w') as json_file:
             #    json.dump(data, json_file, indent=4)
             if current_user.is_authenticated:
-                json_filename=request.form.get('filename')
+                json_filename = request.form.get('filename')
                 data = process_data(request)
-                check_filename=db.session.execute(select(JsonFile).filter(JsonFile.user_id == current_user.id, JsonFile.filename == json_filename)).scalar_one_or_none()
+                check_filename = db.session.execute(select(JsonFile).filter(
+                    JsonFile.user_id == current_user.id, JsonFile.filename == json_filename)).scalar_one_or_none()
                 if check_filename:
-                    
-                    check_filename.json_data=json.dumps(data)
+
+                    check_filename.json_data = json.dumps(data)
                     db.session.commit()
                     return redirect('form')
-                else: 
+                else:
                     json_file = JsonFile(
-                        filename=json_filename, 
-                        json_data=json.dumps(data), 
+                        filename=json_filename,
+                        json_data=json.dumps(data),
                         user_id=current_user.id)
                     db.session.add(json_file)
                     db.session.commit()
                     flash('Form successfully submitted!', 'success')
-                    return redirect('form') 
+                    return redirect('form')
     elif request.method == 'GET':
         return render_template('form.html', data=data, files=files)
 
@@ -383,32 +424,32 @@ def form():
 @app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    #files = retrive_files()
+    # files = retrive_files()
     files = get_user_files()
     # You can pass dynamic data here for the dashboard
     if request.method == 'POST':
-        #with open("elaborazioni/" + request.form.get('data_select'), 'r') as json_file:
+        # with open("elaborazioni/" + request.form.get('data_select'), 'r') as json_file:
         #    data = json.load(json_file)
-        #data = round_floats(data)
-        #months = set_year(data["Mese di partenza"])
+        # data = round_floats(data)
+        # months = set_year(data["Mese di partenza"])
 
-        #plot_values(["Aitot*", "Etot*", "W*", "Sf 1*",
+        # plot_values(["Aitot*", "Etot*", "W*", "Sf 1*",
         #            "D/S 1*", "Winv tot", "Wo"], data, "caso1")
-        #plot_values(["Aitot*", "Etot*", "W*", "Sf 2*",
+        # plot_values(["Aitot*", "Etot*", "W*", "Sf 2*",
         #            "D/S 2*", "Winv tot", "Wo"], data, "caso2")
 
         filename = request.form.get("data_select")
         if filename:
-            json_data=get_json(filename)
-            data=json.loads(json_data)
+            json_data = get_json(filename)
+            data = json.loads(json_data)
             data = round_floats(data)
             months = set_year(data["Mese di partenza"])
             print(data)
 
-            plot_values(["Aitot*", "Etot*", "W*", "Sf A*",
-                        "D/S A*", "Winv tot", "Wo"], data, "casoA")
-            plot_values(["Aitot*", "Etot*", "W*", "Sf B*",
-                        "D/S B*", "Winv tot", "Wo"], data, "casoB")
+            plot_values(["Aitot*", "Etot*", "W*", "Sf 1*",
+                        "D/S 1*", "Winv tot", "Wo"], data, "caso1")
+            plot_values(["Aitot*", "Etot*", "W*", "Sf 2*",
+                        "D/S 2*", "Winv tot", "Wo"], data, "caso1")
         return render_template('dashboard.html', data=data, months=months, files=files, plotA="caso1_plot.png", plotB="caso2_plot.png")
     elif request.method == 'GET':
         return render_template('dashboard.html', data=None, files=files)
@@ -422,5 +463,5 @@ if __name__ == "__main__":
     db.init_app(app)
     with app.app_context():
         db.create_all()
-    #app.run(host="0.0.0.0", debug=False)
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=False)
+    #app.run(debug=True)

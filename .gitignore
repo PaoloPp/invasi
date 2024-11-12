@@ -5,3 +5,6 @@ include
 share
 pyvenv.cfg
 lib/*
+Modin.pptx
+var/app-instance/invasi.db
+secret.py
