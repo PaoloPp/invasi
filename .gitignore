@@ -8,3 +8,6 @@ lib/*
 Modin.pptx
 var/app-instance/invasi.db
 secret.py
+invasi-app/lib/
+invasi-app/bin/
+invasi-app/temp_export/
