@@ -109,7 +109,7 @@ def process_data(request):
             values_Wi2.append(data["Winv aut"])
 
         if (values_Wi2[i] < data["Winv aut"]) or (data["w j"][i] < 0):
-            values_sf2.append('0')
+            values_sf2.append(0)
         else:
             values_sf2.append(data["w j"][i])
 
@@ -125,6 +125,10 @@ def process_data(request):
     data["D/S 2 j"] = values_deficit2
     data["D/S 1*"] = somma_cumulata(data["D/S 1 j"])
     data["D/S 2*"] = somma_cumulata(data["D/S 2 j"])
+    data["Sf 1 avg"] = sum(values_sf1) / len(values_sf1)
+    data["Sf 2 avg"] = sum(values_sf2) / len(values_sf2)
+    data["D/S 1 avg"] = sum(values_deficit1) / len(values_deficit1)
+    data["D/S 2 avg"] = sum(values_deficit2) / len(values_deficit2)
 
     return data
 

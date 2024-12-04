@@ -25,30 +25,7 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container">
-            <a class="navbar-brand">ModIn</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/form">Form</a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" href="/logout">Logout</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    {% include "navbar.html" %}
     <div class="container mt-5">
         <h1 class="text-center">ModIn</h1>
         <h3>Data from JSON</h3>
@@ -153,189 +130,234 @@
         <br>
 
         <div class="text-center">
-            <button id="toggleViewPre" class="btn btn-secondary">Pre correzioni</button>
-            <button id="toggleViewPost" class="btn btn-secondary">Post correzioni</button>
+            <button id="toggleViewPre" class="btn btn-secondary">Risultati</button>
+            <button id="toggleViewPost" class="btn btn-secondary">Deficit e Surplus</button>
         </div>
 
+        <br>
+
         <div id="PreCorrezioni" class="table-responsive">
-            <p>Pre correzioni</p>
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="9">Afflussi all'invaso</th>
-                    <tr colspan="9">
-                        <th>Mese</th>
-                        <th>A<sub>ij</sub></th>
-                        <th>A*<sub>ij</sub></th>
-                        <th>A<sub>mj</sub></th>
-                        <th>A*<sub>mj</sub></th>
-                        <th>A<sub>mj</sub> (tra)</th>
-                        <th>A*<sub>mj</sub> (tra)</th>
-                        <th>A<sub>mj</sub> (tot)</th>
-                        <th>A*<sub>mj</sub> (tot)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data['A\' j'][i] }}</td>
-                        <td>{{ data["A\'*"][i] }}</td>
-                        <td>{{ data["A j"][i] }}</td>
-                        <td>{{ data["A*"][i] }}</td>
-                        <td>{{ data["A tra"][i] }}</td>
-                        <td>{{ data["A* tra"][i] }}</td>
-                        <td>{{ data["Aitot j"][i] }}</td>
-                        <td>{{ data["Aitot*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <ul class="nav nav-tabs" id="dataTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#afflussi" type="button" role="tab" aria-controls="afflussi" aria-selected="true">
+                        Afflussi all'invaso
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#perdite" type="button" role="tab" aria-controls="perdite" aria-selected="false">
+                        Perdite
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pre-tab" data-bs-toggle="tab" data-bs-target="#erogazioni" type="button" role="tab" aria-controls="erogazioni" aria-selected="false">
+                        Erogazioni
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="post-tab" data-bs-toggle="tab" data-bs-target="#volumi" type="button" role="tab" aria-controls="volumi" aria-selected="false">
+                        Volumi
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="post-tab" data-bs-toggle="tab" data-bs-target="#sfiori" type="button" role="tab" aria-controls="sfiori" aria-selected="false">
+                        Sfiori
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="post-tab" data-bs-toggle="tab" data-bs-target="#defsur" type="button" role="tab" aria-controls="defsur" aria-selected="false">
+                        Deficit/Surplus
+                    </button>
+                </li>
+            </ul>
+    
+            <!-- Tab content -->
+            <div class="tab-content" id="dataTabsContent">
+    
+                <div class="tab-pane fade show active" id="afflussi" role="tabpanel" aria-labelledby="afflussi-tab">
+                    <table class="table table-bordered table-striped table-fixed">
+                        <thead>
+                            <th colspan="9">Afflussi all'invaso</th>
+                            <tr colspan="9">
+                                <th>Mese</th>
+                                <th>A<sub>ij</sub></th>
+                                <th>A*<sub>ij</sub></th>
+                                <th>A<sub>mj</sub></th>
+                                <th>A*<sub>mj</sub></th>
+                                <th>A<sub>mj</sub> (tra)</th>
+                                <th>A*<sub>mj</sub> (tra)</th>
+                                <th>A<sub>mj</sub> (tot)</th>
+                                <th>A*<sub>mj</sub> (tot)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in range(data['A j']|length) %}
+                            <tr>
+                                <td>{{ months[i] }}</td>
+                                <td>{{ data['A\' j'][i] }}</td>
+                                <td>{{ data["A\'*"][i] }}</td>
+                                <td>{{ data["A j"][i] }}</td>
+                                <td>{{ data["A*"][i] }}</td>
+                                <td>{{ data["A tra"][i] }}</td>
+                                <td>{{ data["A* tra"][i] }}</td>
+                                <td>{{ data["Aitot j"][i] }}</td>
+                                <td>{{ data["Aitot*"][i] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+    
+    
+                <div class="tab-pane fade" id="perdite" role="tabpanel" aria-labelledby="perdite-tab">
+                    <table class="table table-bordered table-striped table-fixed">
+                        <thead>
+                            <th colspan="7">Perdite</th>
+                            <tr colspan="7">
+                                <th>Mese</th>
+                                <th>P<sub>mj</sub> (ev)</th>
+                                <th>P*<sub>mj</sub> (ev)</th>
+                                <th>P<sub>mj</sub> (inf)</th>
+                                <th>P*<sub>mj</sub> (inf)</th>
+                                <th>D<sub>mj</sub> (eco)</th>
+                                <th>D*<sub>mj</sub> (eco)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in range(data['A j']|length) %}
+                            <tr>
+                                <td>{{ months[i] }}</td>
+                                <td>{{ data['P ev j'][i] }}</td>
+                                <td>{{ data["P ev*"][i] }}</td>
+                                <td>{{ data['P inf j'][i] }}</td>
+                                <td>{{ data["P inf*"][i] }}</td>
+                                <td>{{ data['D ec j'][i] }}</td>
+                                <td>{{ data["D ec*"][i] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+    
+    
+                <div class="tab-pane fade" id="erogazioni" role="tabpanel" aria-labelledby="erogazioni-tab">
+                    <table class="table table-bordered table-striped table-fixed">
+                        <thead>
+                            <th colspan="9">Erogazioni</th>
+                            <tr colspan="9">
+                                <th>Mese</th>
+                                <th>E<sub>mj</sub> (pot)</th>
+                                <th>E*<sub>mj</sub> (pot)</th>
+                                <th>E<sub>mj</sub> (irr)</th>
+                                <th>E*<sub>mj</sub> (irr)</th>
+                                <th>E<sub>mj</sub> (ind)</th>
+                                <th>E*<sub>mj</sub> (ind)</th>
+                                <th>E<sub>mj</sub> (tra)</th>
+                                <th>E*<sub>mj</sub> (tra)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in range(data['A j']|length) %}
+                            <tr>
+                                <td>{{ months[i] }}</td>
+                                <td>{{ data["E pot j"][i] }}</td>
+                                <td>{{ data["E pot*"][i] }}</td>
+                                <td>{{ data["E irr j"][i] }}</td>
+                                <td>{{ data["E irr*"][i] }}</td>
+                                <td>{{ data["E ind j"][i] }}</td>
+                                <td>{{ data["E ind*"][i] }}</td>
+                                <td>{{ data["E tra j"][i] }}</td>
+                                <td>{{ data["E tra*"][i] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+    
+                </div>
+    
+    
+                <div class="tab-pane fade" id="volumi" role="tabpanel" aria-labelledby="volumi-tab">
+                    <table class="table table-bordered table-striped table-fixed">
+                        <thead>
+                            <th colspan="7">Volumi </th>
+                            <tr colspan="7">
+                                <th>Mese</th>
+                                <th>w<sub>mj</sub></th>
+                                <th>w*<sub>mj</sub></th>
+                                <th>W<sub>mj</sub></th>
+                                <th>W*<sub>mj</sub></th>
+                                <th>W<sub>mj</sub> (1)</th>
+                                <th>W<sub>mj</sub> (2)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in range(data['A j']|length) %}
+                            <tr>
+                                <td>{{ months[i] }}</td>
+                                <td>{{ data["w j"][i] }}</td>
+                                <td>{{ data["w*"][i] }}</td>
+                                <td>{{ data["W j"][i] }}</td>
+                                <td>{{ data["W*"][i] }}</td>
+                                <td>{{ data["Wi 1*"][i] }}</td>
+                                <td>{{ data["Wi 2*"][i] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+    
+                <div class="tab-pane fade" id="sfiori" role="tabpanel" aria-labelledby="sfiori-tab">
+                    <table class="table table-bordered table-striped table-fixed">
+                        <thead>
+                            <th colspan="5">Sfiori</th>
+                            <tr colspan="5">
+                                <th>Mese</th>
+                                <th>S<sub>mj</sub> (1)</th>
+                                <th>S*<sub>mj</sub> (1)</th>
+                                <th>S<sub>mj</sub> (2)</th>
+                                <th>S*<sub>mj</sub> (2)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in range(data['A j']|length) %}
+                            <tr>
+                                <td>{{ months[i] }}</td>
+                                <td>{{ data["Sf 1"][i] }}</td>
+                                <td>{{ data["Sf 1*"][i] }}</td>
+                                <td>{{ data["Sf 2"][i] }}</td>
+                                <td>{{ data["Sf 2*"][i] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+    
+                <div class="tab-pane fade" id="defsur" role="tabpanel" aria-labelledby="defsur-tab">
+                    <table class="table table-bordered table-striped table-fixed">
+                        <thead>
+                            <th colspan="5">Deficit/Surplus</th>
+                            <tr colspan="5">
+                                <th>Mese</th>
+                                <th>D/S<sub>mj</sub> (1)</th>
+                                <th>D/S*<sub>mj</sub> (1)</th>
+                                <th>D/S<sub>mj</sub> (2)</th>
+                                <th>D/S*<sub>mj</sub> (2)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in range(data['A j']|length) %}
+                            <tr>
+                                <td>{{ months[i] }}</td>
+                                <td>{{ data["D/S 1 j"][i] }}</td>
+                                <td>{{ data["D/S 1*"][i] }}</td>
+                                <td>{{ data["D/S 2 j"][i] }}</td>
+                                <td>{{ data["D/S 2*"][i] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="7">Perdite</th>
-                    <tr colspan="7">
-                        <th>Mese</th>
-                        <th>P<sub>mj</sub> (ev)</th>
-                        <th>P*<sub>mj</sub> (ev)</th>
-                        <th>P<sub>mj</sub> (inf)</th>
-                        <th>P*<sub>mj</sub> (inf)</th>
-                        <th>D<sub>mj</sub> (eco)</th>
-                        <th>D*<sub>mj</sub> (eco)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data['P ev j'][i] }}</td>
-                        <td>{{ data["P ev*"][i] }}</td>
-                        <td>{{ data['P inf j'][i] }}</td>
-                        <td>{{ data["P inf*"][i] }}</td>
-                        <td>{{ data['D ec j'][i] }}</td>
-                        <td>{{ data["D ec*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="9">Erogazioni</th>
-                    <tr colspan="9">
-                        <th>Mese</th>
-                        <th>E<sub>mj</sub> (pot)</th>
-                        <th>E*<sub>mj</sub> (pot)</th>
-                        <th>E<sub>mj</sub> (irr)</th>
-                        <th>E*<sub>mj</sub> (irr)</th>
-                        <th>E<sub>mj</sub> (ind)</th>
-                        <th>E*<sub>mj</sub> (ind)</th>
-                        <th>E<sub>mj</sub> (tra)</th>
-                        <th>E*<sub>mj</sub> (tra)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data["E pot j"][i] }}</td>
-                        <td>{{ data["E pot*"][i] }}</td>
-                        <td>{{ data["E irr j"][i] }}</td>
-                        <td>{{ data["E irr*"][i] }}</td>
-                        <td>{{ data["E ind j"][i] }}</td>
-                        <td>{{ data["E ind*"][i] }}</td>
-                        <td>{{ data["E tra j"][i] }}</td>
-                        <td>{{ data["E tra*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="7">Volumi </th>
-                    <tr colspan="7">
-                        <th>Mese</th>
-                        <th>w<sub>mj</sub></th>
-                        <th>w*<sub>mj</sub></th>
-                        <th>W<sub>mj</sub></th>
-                        <th>W*<sub>mj</sub></th>
-                        <th>W<sub>mj</sub> (1)</th>
-                        <th>W<sub>mj</sub> (2)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data["w j"][i] }}</td>
-                        <td>{{ data["w*"][i] }}</td>
-                        <td>{{ data["W j"][i] }}</td>
-                        <td>{{ data["W*"][i] }}</td>
-                        <td>{{ data["Wi 1*"][i] }}</td>
-                        <td>{{ data["Wi 2*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="5">Sfiori</th>
-                    <tr colspan="5">
-                        <th>Mese</th>
-                        <th>S<sub>mj</sub> (1)</th>
-                        <th>S*<sub>mj</sub> (1)</th>
-                        <th>S<sub>mj</sub> (2)</th>
-                        <th>S*<sub>mj</sub> (2)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data["Sf 1"][i] }}</td>
-                        <td>{{ data["Sf 1*"][i] }}</td>
-                        <td>{{ data["Sf 2"][i] }}</td>
-                        <td>{{ data["Sf 2*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="5">Deficit/Surplus</th>
-                    <tr colspan="5">
-                        <th>Mese</th>
-                        <th>D/S<sub>mj</sub> (1)</th>
-                        <th>D/S*<sub>mj</sub> (1)</th>
-                        <th>D/S<sub>mj</sub> (2)</th>
-                        <th>D/S*<sub>mj</sub> (2)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data["D/S 1 j"][i] }}</td>
-                        <td>{{ data["D/S 1*"][i] }}</td>
-                        <td>{{ data["D/S 2 j"][i] }}</td>
-                        <td>{{ data["D/S 2*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
             <div class="container1">
                 <img src="{{ url_for('static', filename=plotA) }}" alt="Caso 1">
                 <img src="{{ url_for('static', filename=plotB) }}" alt="Caso 2">
@@ -344,183 +366,62 @@
 
         <div id="PostCorrezioni" class="table-responsive" style="display:none;">
             <p>Post correzioni</p>
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="9">Afflussi all'invaso</th>
-                    <tr colspan="9">
-                        <th>Mese</th>
-                        <th>A<sub>ij</sub></th>
-                        <th>A*<sub>ij</sub></th>
-                        <th>A<sub>mj</sub></th>
-                        <th>A*<sub>mj</sub></th>
-                        <th>A<sub>mj</sub> (tra)</th>
-                        <th>A*<sub>mj</sub> (tra)</th>
-                        <th>A<sub>mj</sub> (tot)</th>
-                        <th>A*<sub>mj</sub> (tot)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data['A\' j'][i] }}</td>
-                        <td>{{ data["A\'*"][i] }}</td>
-                        <td>{{ data["A j"][i] }}</td>
-                        <td>{{ data["A*"][i] }}</td>
-                        <td>{{ data["A tra"][i] }}</td>
-                        <td>{{ data["A* tra"][i] }}</td>
-                        <td>{{ data["Aitot j"][i] }}</td>
-                        <td>{{ data["Aitot*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <br>
 
             <table class="table table-bordered table-striped table-fixed">
                 <thead>
-                    <th colspan="7">Perdite</th>
-                    <tr colspan="7">
-                        <th>Mese</th>
-                        <th>P<sub>mj</sub> (ev)</th>
-                        <th>P*<sub>mj</sub> (ev)</th>
-                        <th>P<sub>mj</sub> (inf)</th>
-                        <th>P*<sub>mj</sub> (inf)</th>
-                        <th>D<sub>mj</sub> (eco)</th>
-                        <th>D*<sub>mj</sub> (eco)</th>
+                    <tr>
+                        <th rowspan="2">Invaso</th>
+                        <th rowspan="2">Condizione idrologica</th>
+                        <th colspan="2">Caso 1 (Winv tot)</th>
+                        <th colspan="2">Caso 2 (Winv aut)</th>
+                    </tr>
+                    <tr>
+                        <th>S/D<br>(Mm³)</th>
+                        <th>S<br>(Mm³)</th>
+                        <th>S/D<br>(Mm³)</th>
+                        <th>S<br>(Mm³)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for i in range(data['A j']|length) %}
                     <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data['P ev j'][i] }}</td>
-                        <td>{{ data["P ev*"][i] }}</td>
-                        <td>{{ data['P inf j'][i] }}</td>
-                        <td>{{ data["P inf*"][i] }}</td>
-                        <td>{{ data['D ec j'][i] }}</td>
-                        <td>{{ data["D ec*"][i] }}</td>
+                        <td><b> {{ data['Filename'] }}</b></td>
+                        <td>Media</td>
+                        <td> {{ data['D/S 1 avg'] }} </td>
+                        <td> {{ data['Sf 1 avg'] }}</td>
+                        <td> {{ data['D/S 2 avg'] }} </td>
+                        <td> {{ data['Sf 2 avg'] }} </td>
                     </tr>
-                    {% endfor %}
                 </tbody>
+                
+                <br>
+
+                <table class="table table-bordered table-striped table-fixed">
+                    <thead>
+                        <tr>
+                            <th colspan="4">Condizione idrologica media</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th>Invasi</th>
+                            <th>Disponibilità traversa SV<br>(Mm³)</th>
+                            <th>Totale<br>(Mm³)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="row-label">Surplus<br>(Mm³)</td>
+                            <td>+35.53</td>
+                            <td rowspan="2" style="vertical-align: middle">+166.47</td>
+                            <td rowspan="2" class="highlight" style="vertical-align: middle">+129.22</td>
+                        </tr>
+                        <tr>
+                            <td class="row-label">Deficit<br>(Mm³)</td>
+                            <td>72.68</td>
+                        </tr>
+                    </tbody>
+                </table>
             </table>
 
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="9">Erogazioni</th>
-                    <tr colspan="9">
-                        <th>Mese</th>
-                        <th>E<sub>mj</sub> (pot)</th>
-                        <th>E*<sub>mj</sub> (pot)</th>
-                        <th>E<sub>mj</sub> (irr)</th>
-                        <th>E*<sub>mj</sub> (irr)</th>
-                        <th>E<sub>mj</sub> (ind)</th>
-                        <th>E*<sub>mj</sub> (ind)</th>
-                        <th>E<sub>mj</sub> (tra)</th>
-                        <th>E*<sub>mj</sub> (tra)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data["E pot j"][i] }}</td>
-                        <td>{{ data["E pot*"][i] }}</td>
-                        <td>{{ data["E irr j"][i] }}</td>
-                        <td>{{ data["E irr*"][i] }}</td>
-                        <td>{{ data["E ind j"][i] }}</td>
-                        <td>{{ data["E ind*"][i] }}</td>
-                        <td>{{ data["E tra j"][i] }}</td>
-                        <td>{{ data["E tra*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="7">Volumi </th>
-                    <tr colspan="7">
-                        <th>Mese</th>
-                        <th>w<sub>mj</sub></th>
-                        <th>w*<sub>mj</sub></th>
-                        <th>W<sub>mj</sub></th>
-                        <th>W*<sub>mj</sub></th>
-                        <th>W<sub>mj</sub> (1)</th>
-                        <th>W<sub>mj</sub> (2)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data["w j"][i] }}</td>
-                        <td>{{ data["w*"][i] }}</td>
-                        <td>{{ data["W j"][i] }}</td>
-                        <td>{{ data["W*"][i] }}</td>
-                        <td>{{ data["Wi 1*"][i] }}</td>
-                        <td>{{ data["Wi 2*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="5">Sfiori</th>
-                    <tr colspan="5">
-                        <th>Mese</th>
-                        <th>S<sub>mj</sub> (1)</th>
-                        <th>S*<sub>mj</sub> (1)</th>
-                        <th>S<sub>mj</sub> (2)</th>
-                        <th>S*<sub>mj</sub> (2)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data["Sf 1"][i] }}</td>
-                        <td>{{ data["Sf 1*"][i] }}</td>
-                        <td>{{ data["Sf 2"][i] }}</td>
-                        <td>{{ data["Sf 2*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <th colspan="5">Deficit/Surplus</th>
-                    <tr colspan="5">
-                        <th>Mese</th>
-                        <th>D/S<sub>mj</sub> (1)</th>
-                        <th>D/S*<sub>mj</sub> (1)</th>
-                        <th>D/S<sub>mj</sub> (2)</th>
-                        <th>D/S*<sub>mj</sub> (2)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['A j']|length) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data["D/S 1 j"][i] }}</td>
-                        <td>{{ data["D/S 1*"][i] }}</td>
-                        <td>{{ data["D/S 2 j"][i] }}</td>
-                        <td>{{ data["D/S 2*"][i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
             <div class="container1">
                 <img src="{{ url_for('static', filename=plotA) }}" alt="Caso 1">
                 <img src="{{ url_for('static', filename=plotB) }}" alt="Caso 2">

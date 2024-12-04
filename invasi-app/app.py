@@ -30,6 +30,9 @@ def create_app(config_class=DevelopmentConfig):
     
     mail = Mail(app)
     
+    with app.app_context():
+        db.create_all()
+    
     return app
 
 

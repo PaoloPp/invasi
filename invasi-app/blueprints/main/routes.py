@@ -12,6 +12,10 @@ import json
 
 main_bp = Blueprint('main', __name__)
 
+@main_bp.route('/', methods=['GET'])
+def index():
+    return redirect(url_for('auth.login'))
+
 @main_bp.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
@@ -90,3 +94,9 @@ def form():
                     return redirect('form')
     elif request.method == 'GET':
         return render_template('form.html', data=data, files=files)
+    
+
+@main_bp.route('/exchange', methods=['GET', 'POST'])
+@login_required
+def exchange():
+    return render_template('exchange.html')
