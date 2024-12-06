@@ -24,9 +24,188 @@
             /* Adjust size as needed */
             height: auto;
         }
+
+        .dropdown-menu {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .selected-values {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .selected-values span {
+            display: inline-block;
+            margin-right: 5px;
+            padding: 5px 10px;
+            border: 1px solid #007bff;
+            border-radius: 3px;
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .selected-values span:hover {
+            background-color: #0056b3;
+            cursor: pointer;
+        }
+
+        .dropdown-toggle::after {
+            display: none;
+        }
+
+        .dropdown-menu label {
+            cursor: pointer;
+        }
     </style>
 </head>
 
 <body>
     {% include "navbar.html" %}
+
+    <div class="container mt-5">
+        <h1>Multiple Selection Menu</h1>
+
+        <!-- Selected Values Display -->
+        <div id="selected-values" class="selected-values">
+            <strong>Selected:</strong> <em>None</em>
+        </div>
+
+        <form id="damns_select" method="POST">
+            <div class="dropdown" id="dropdown-container">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    Select Options
+                </button>
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdown-menu">
+                    {% for file in files %}
+                    <li>
+                        <label class="dropdown-item">
+                            <input type="checkbox" name="selected_files" value="{{ file }}" class="option-checkbox"> {{ file }}
+                        </label>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </form>
+    </div>
+
+    <div class="container mt-5 table-responsive" >
+        <table class="table table-bordered table-striped table-fixed">
+            <thead>
+                <tr>
+                    <th rowspan="2">Invaso</th>
+                    <th rowspan="2">Condizione idrologica</th>
+                    <th colspan="2">Caso 1 (Winv tot)</th>
+                    <th colspan="2">Caso 2 (Winv aut)</th>
+                </tr>
+                <tr>
+                    <th>S/D<br>(Mm³)</th>
+                    <th>S<br>(Mm³)</th>
+                    <th>S/D<br>(Mm³)</th>
+                    <th>S<br>(Mm³)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, file in (data or {}).items() %}
+                <tr>
+                    <td><b>{{ key }}</b></td>  <!-- This will display the keys like 'Conza 0', 'Conza 1', etc. -->
+                    <td>Media</td>
+                    <td>{{ file['D/S 1 avg'] }}</td>
+                    <td>{{ file['Sf 1 avg'] }}</td>
+                    <td>{{ file['D/S 2 avg'] }}</td>
+                    <td>{{ file['Sf 2 avg'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            
+            <br>
+
+            <table class="table table-bordered table-striped table-fixed">
+                <thead>
+                    <tr>
+                        <th colspan="4">Condizione idrologica media</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th>Invasi</th>
+                        <th>Disponibilità traversa SV<br>(Mm³)</th>
+                        <th>Totale<br>(Mm³)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="row-label">Surplus<br>(Mm³)</td>
+                        <td> {{ surplus_sum }}</td>
+                        <td rowspan="2" style="vertical-align: middle">{{ traversa }}</td>
+                        <td rowspan="2" class="highlight" style="vertical-align: middle">{{ total }}</td>
+                    </tr>
+                    <tr>
+                        <td class="row-label">Deficit<br>(Mm³)</td>
+                        <td>{{ deficit_sum }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </table>
+    </div>
+
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Get references to elements
+        const checkboxes = document.querySelectorAll('.option-checkbox');
+        const selectedValuesContainer = document.getElementById('selected-values');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const dropdownButton = document.getElementById('dropdownMenuButton');
+        const dropdownContainer = document.getElementById('dropdown-container');
+
+        // Handle selecting or deselecting options
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const selectedOptions = Array.from(checkboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+
+                // Clear previous selections
+                selectedValuesContainer.innerHTML = `<strong>Selected:</strong> `;
+
+                if (selectedOptions.length === 0) {
+                    selectedValuesContainer.innerHTML += `<em>None</em>`;
+                } else {
+                    selectedOptions.forEach(value => {
+                        const span = document.createElement('span');
+                        span.textContent = value;
+                        selectedValuesContainer.appendChild(span);
+                    });
+                }
+            });
+        });
+
+        // Function to close the dropdown
+        function closeDropdown() {
+            const dropdown = new bootstrap.Dropdown(dropdownButton);
+            dropdown.hide();
+        }
+
+        // Function to open the dropdown
+        function openDropdown() {
+            const dropdown = new bootstrap.Dropdown(dropdownButton);
+            dropdown.show();
+        }
+
+        // Detect click outside to close the dropdown
+        document.addEventListener('click', function (event) {
+            if (!dropdownContainer.contains(event.target)) {
+                closeDropdown();
+            } else {
+                // Open dropdown when the button is clicked
+                openDropdown();
+            }
+        });
+    </script>
 </body>

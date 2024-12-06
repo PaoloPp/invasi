@@ -99,4 +99,49 @@ def form():
 @main_bp.route('/exchange', methods=['GET', 'POST'])
 @login_required
 def exchange():
-    return render_template('exchange.html')
+    data = {}
+    if request.method == 'POST':
+        
+        surplus_sum = 0
+        deficit_sum = 0
+        total = 0
+        print("Form data:", request.form)
+        # Get the list of selected files from the form
+        selected_files = request.form.getlist('selected_files')
+        if selected_files:
+            print("Selected files:", selected_files)  # This will show the selected files in the terminal
+            data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
+            print(data)
+        
+        return render_template('exchange.html', files=get_user_files(), data=data, surplus_sum=surplus_sum, deficit_sum=deficit_sum, total=total)
+        # Process the selected files or use them as needed
+    # Render the template and pass files to the form
+    return render_template('exchange.html', files=get_user_files(), data=None, surplus_sum=0, deficit_sum=0, total=0)
+
+
+def calculate_exchange(_files):
+    sf_data = {}
+    surplus_sum = 0
+    deficit_sum = 0
+    total = 0
+    for file in _files:
+        json_data = get_json(file)
+        data = json.loads(json_data)
+        key = data["Filename"]
+        sf_data[key] = {}
+        sf_data[key]["Sf 1 avg"] = data["Sf 1 avg"]
+        sf_data[key]["Sf 2 avg"] = data["Sf 2 avg"]
+        sf_data[key]["D/S 1 avg"] = data["D/S 1 avg"]
+        sf_data[key]["D/S 2 avg"] = data["D/S 2 avg"]
+        if data["D/S 1 avg"] > 0:
+            surplus_sum += data["D/S 1 avg"]
+        elif data["D/S 1 avg"] < 0:
+            deficit_sum += data["D/S 1 avg"]
+    
+    total = round_floats(surplus_sum + deficit_sum)
+    surplus_sum = round_floats(surplus_sum)
+    deficit_sum = round_floats(deficit_sum)
+    sf_data = round_floats(sf_data)
+    return sf_data, surplus_sum, deficit_sum, total
+
+    
