@@ -111,7 +111,9 @@ def exchange():
         if selected_files:
             print("Selected files:", selected_files)  # This will show the selected files in the terminal
             data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
+            split_json_by_ds(selected_files)
             print(data)
+
         
         return render_template('exchange.html', files=get_user_files(), data=data, surplus_sum=surplus_sum, deficit_sum=deficit_sum, total=total)
         # Process the selected files or use them as needed
@@ -144,4 +146,67 @@ def calculate_exchange(_files):
     sf_data = round_floats(sf_data)
     return sf_data, surplus_sum, deficit_sum, total
 
+def split_json_by_ds(_files):
+    surplus = []
+    positive_ds = []
+    sum_positive_ds = 0
+    t = 0
+    deficit = []
+    negative_ds = []
+    sum_negative_ds = 0
+    v = 0
+
+    for data in _files:
+        json_data = get_json(data)
+        data = json.loads(json_data)
+        if "D/S 1*" in data and isinstance(data["D/S 1*"], list) and data["D/S 1*"]:
+            last_value = data["D/S 1*"][-1]
+            filename = data.get("Filename", "Unknown")
+            entry = {"Filename": filename, "Data": last_value}
+            
+            if last_value > 0:
+                positive_ds.append(entry)
+                sum_positive_ds += last_value
+                t += 1
+            else:
+                negative_ds.append(entry)
+                sum_negative_ds += last_value
+                v += 1
+
+
+    if t == 0:
+        positive_ds.append({"Filename": "No data", "Data": 0})
+    if v == 0:
+        negative_ds.append({"Filename": "No data", "Data": 0})
     
+    surplus.append(positive_ds)
+    surplus.append(sum_positive_ds) #Total sum of Surplus
+    surplus.append(t)
+
+    deficit.append(negative_ds)
+    deficit.append(sum_negative_ds) #Total sum of Deficit
+    deficit.append(v)
+
+
+    print("Positive DS:", surplus[0])
+    print("Negative DS:", deficit[0])
+
+    if surplus[1] > deficit[1]:
+        outflowA(surplus, deficit, _files)
+    elif surplus[1] < deficit[1]:
+        outflowB(surplus, deficit, _files)
+    
+    return surplus, deficit
+
+
+def outflowA(_surplus, _deficit, _files):
+    print("Outflow A")
+    delta = _deficit[1] - _surplus[1]
+
+
+
+    return
+
+def outflowB(_surplus, _deficit, _files):
+    print("Outflow B")
+    return 

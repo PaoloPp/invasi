@@ -74,7 +74,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect('/auth/login')
+    return redirect(url_for('auth.login'))
 
 
 @auth_bp.route('/verify/<token>')  # GET
@@ -102,7 +102,7 @@ def verify_email(token):
         # flash("Account verificato con successo! Ora puoi effettuare il login.", "success")
         print('Account verificato con successo! Ora puoi effettuare il login.')
 
-    return redirect(url_for('login'))
+    return redirect(url_for('auth.login'))
 
 s = URLSafeTimedSerializer("secret-key")
 

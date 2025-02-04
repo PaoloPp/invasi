@@ -1,0 +1,10 @@
+__pycache__/
+/invasi-app/__pycache__/
+/invasi-app/*/*.pyc
+/invasi-app/*/*.pyo
+/invasi-app/*/*.pyd
+/invasi-app/*/*.env
+/invasi-app/venv/
+/invasi-app/bin/
+/invasi-app/lib/
+/invasi-app/include/
