@@ -201,7 +201,39 @@ def split_json_by_ds(_files):
 
 def outflowA(_surplus, _deficit, _files):
     print("Outflow A")
-    delta = _deficit[1] - _surplus[1]
+    delta = _surplus[1] - _deficit[1]
+    print("Delta:", delta)
+    diff_monthly = []
+    delta_monthly = []
+    delta_suplus = []
+    
+    for surp in _surplus[0]:
+        diff = []
+        delt = []
+        for file in _files:
+            if surp["Filename"] == file:
+                json_data = get_json(file)
+                data = json.loads(json_data)
+                
+                #Calcolo fattore delta(i)
+                delta_suplus = ((data["A*"][11] * data["Aitot*"][11])/delta)
+                
+                #Afflusso mensile - erogazioni mensili
+                for i in range(12):
+                    d = data["A j"][i] - data["E pot j"][i] - data["E irr j"][i] - data["E ind j"][i] - data["E tra j"][i]
+                    diff.append(d) if d > 0 else diff.append(0)
+                
+                #Delta(i) "normalizzata"
+                for i in range(12):
+                    d = data["A j"][i] * diff[i] / delta_suplus
+                    delt.append(d)
+                
+        diff_monthly.append(diff)
+        delta_monthly.append(delt)
+    print("Diff Monthly:", diff_monthly)
+    print("Delta Monthly:", delta_monthly)
+
+
 
 
 
