@@ -61,7 +61,7 @@ def export_db():
     os.makedirs('temp_export', exist_ok=True)
 
     # Copy the database to the export path
-    shutil.copy2('var/app-instance/invasi.db', export_path)
+    shutil.copy2('instance/invasi.db', export_path)
 
     # Send the copied file as a download
     return send_file(export_path, as_attachment=True, download_name="invasi_export.db")

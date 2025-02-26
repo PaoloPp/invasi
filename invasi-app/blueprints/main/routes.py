@@ -29,12 +29,12 @@ def dashboard():
             data = json.loads(json_data)
             data = round_floats(data)
             months = set_year(data["Mese di partenza"])
-            print(data)
+            plot_values(["Aitot*", "Etot*", "W*", "Sf 1*", "D/S 1*", "Winv tot", "Wo"], data, "caso1")
+            plot_values(["Aitot*", "Etot*", "W*", "Sf 2*", "D/S 2*", "Winv aut", "Wo"], data, "caso2")
+            
+            
+            
 
-            plot_values(["Aitot*", "Etot*", "W*", "Sf 1*",
-                        "D/S 1*", "Winv tot", "Wo"], data, "caso1")
-            plot_values(["Aitot*", "Etot*", "W*", "Sf 2*",
-                        "D/S 2*", "Winv tot", "Wo"], data, "caso1")
         return render_template('dashboard.html', data=data, months=months, files=files, plotA="caso1_plot.png", plotB="caso2_plot.png")
     elif request.method == 'GET':
         return render_template('dashboard.html', data=None, files=files)

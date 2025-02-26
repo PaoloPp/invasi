@@ -74,7 +74,7 @@ def process_data(request):
         data[o] = somma_cumulata(data[oj + " j"])
     for i in range(0, 12):
         values_tot.append(float(
-            data["D ec j"][i] + data["E pot j"][i] + data["E irr j"][i] + data["E ind j"][i]))
+            data["D ec j"][i] + data["E pot j"][i] + data["E irr j"][i] + data["E ind j"][i])) ##TO FIX
     data["Etot j"] = values_tot
     data["Etot*"] = somma_cumulata(data["Etot j"])
     for i in range(0, 12):
@@ -114,7 +114,7 @@ def process_data(request):
             values_sf2.append(data["w j"][i])
 
         values_deficit1.append(float(data["w j"][i] - float(values_sf1[i])))
-        values_deficit2.append(float(data["w j"][i] - float(values_sf1[i])))
+        values_deficit2.append(float(data["w j"][i] - float(values_sf2[i])))
     data["Wi 1*"] = values_Wi1
     data["Wi 2*"] = values_Wi2
     data["Sf 1"] = values_sf1
@@ -140,6 +140,7 @@ def get_json(filename_selected):
     return db.session.execute(db.select(JsonFile.json_data).filter_by(filename=filename_selected)).scalar()
 
 def plot_values(_label, _data, _name):
+    print("Plotting: " +_name)
     ldata = _data.copy()
     x = range(1, 13)
     for d in _label:
