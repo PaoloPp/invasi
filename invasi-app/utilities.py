@@ -139,19 +139,50 @@ def get_user_files():
 def get_json(filename_selected):
     return db.session.execute(db.select(JsonFile.json_data).filter_by(filename=filename_selected)).scalar()
 
+import matplotlib.pyplot as plt
+
+import matplotlib.pyplot as plt
+
+import matplotlib.pyplot as plt
+
 def plot_values(_label, _data, _name):
-    print("Plotting: " +_name)
+    print("Plotting: " + _name)
     ldata = _data.copy()
-    x = range(1, 13)
+    
+    # Define full month names and their corresponding indices
+    full_months = [
+        "January", "February", "March", "April", "May", "June", 
+        "July", "August", "September", "October", "November", "December"
+    ]
+    short_months = [m[0] for m in full_months]  # Extract first letter of each month
+    month_index = {m: i for i, m in enumerate(full_months)}
+
+    # Get starting month from "Mese di partenza"
+    start_month = ldata.get("Mese di partenza", "January")  # Default to "January" if missing
+    start_idx = month_index.get(start_month, 0)  # Get index of start month
+
+    # Rotate month labels and initials
+    rotated_short_months = short_months[start_idx:] + short_months[:start_idx]
+    x = range(1, 13)  # Keep x-axis as 1-12
+
     for d in _label:
-        if (isinstance(ldata[d], float) == True):
-            ldata[d] = [ldata[d]]*12
-        plt.plot(x, ldata[d], label=d)
-    # `ncol` controls the number of columns in the legend
+        if isinstance(ldata[d], float):
+            ldata[d] = [ldata[d]] * 12
+        elif isinstance(ldata[d], list) and len(ldata[d]) < 12:
+            ldata[d] += [ldata[d][-1]] * (12 - len(ldata[d]))  # Extend if too short
+
+        # Rotate the data values to match the shifted months
+        rotated_values = ldata[d][start_idx:] + ldata[d][:start_idx]
+        plt.plot(x, rotated_values[:12], label=d)
+
+    plt.xticks(x, rotated_short_months)  # Display only initials
     plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=4)
-    plt.subplots_adjust(bottom=0.25)  # Add space at the bottom for the legend
+    plt.subplots_adjust(bottom=0.25)  # Adjust bottom margin
     plt.savefig(f"static/{_name}_plot.png", format='png', dpi=150)
     plt.close()
+
+
+
 
 
 def somma_cumulata(_var):
