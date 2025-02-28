@@ -176,11 +176,9 @@
                 <div class="tab-pane fade show active" id="afflussi" role="tabpanel" aria-labelledby="afflussi-tab">
                     <table class="table table-bordered table-striped table-fixed">
                         <thead>
-                            <th colspan="9">Afflussi all'invaso</th>
-                            <tr colspan="9">
+                            <th colspan="7">Afflussi all'invaso</th>
+                            <tr colspan="7">
                                 <th>Mese</th>
-                                <th>A'<sub>ij</sub></th>
-                                <th>A'*<sub>ij</sub></th>
                                 <th>A<sub>mj</sub></th>
                                 <th>A*<sub>mj</sub></th>
                                 <th>A<sub>mj</sub> (tra)</th>
@@ -193,8 +191,6 @@
                             {% for i in range(data['A j']|length) %}
                             <tr>
                                 <td>{{ months[i] }}</td>
-                                <td>{{ data['A\' j'][i] }}</td>
-                                <td>{{ data["A\'*"][i] }}</td>
                                 <td>{{ data["A j"][i] }}</td>
                                 <td>{{ data["A*"][i] }}</td>
                                 <td>{{ data["A tra"][i] }}</td>
