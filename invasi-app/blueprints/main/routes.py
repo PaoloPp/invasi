@@ -1,16 +1,26 @@
 from flask import render_template, redirect, url_for, request, flash, jsonify, send_file, Blueprint
 from flask_login import login_required, current_user
-from models import db, User  # Assuming models.py contains the User model
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from io import StringIO
-from models import JsonFile, User
+import os, shutil, json
+
+from models import db, User, JsonFile
 from utilities import get_json, round_floats, plot_values, set_year, get_user_files, process_data
-import os
-import shutil
-import json
 
 main_bp = Blueprint('main', __name__)
+
+def load_json_data(filename):
+    """
+    Helper to load and parse JSON data.
+    Returns a dict on success, or None (with a flash message) on failure.
+    """
+    try:
+        json_data = get_json(filename)
+        return json.loads(json_data)
+    except json.JSONDecodeError as e:
+        flash(f"Error parsing JSON from {filename}: {e}", "danger")
+        return None
 
 @main_bp.route('/', methods=['GET'])
 def index():
@@ -19,226 +29,204 @@ def index():
 @main_bp.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    # files = retrive_files()
     files = get_user_files()
-    # You can pass dynamic data here for the dashboard
     if request.method == 'POST':
         filename = request.form.get("data_select")
         if filename:
-            json_data = get_json(filename)
-            data = json.loads(json_data)
+            data = load_json_data(filename)
+            if not data:
+                return redirect(url_for('main_bp.dashboard'))
             data = round_floats(data)
-            months = set_year(data["Mese di partenza"])
-            plot_values(["Aitot*", "Etot*", "W*", "Sf 1*", "D/S 1*", "Winv tot", "Wo"], data, "caso1")
-            plot_values(["Aitot*", "Etot*", "W*", "Sf 2*", "D/S 2*", "Winv aut", "Wo"], data, "caso2")
-            
-            
-            
-
-        return render_template('dashboard.html', data=data, months=months, files=files, plotA="caso1_plot.png", plotB="caso2_plot.png")
-    elif request.method == 'GET':
-        return render_template('dashboard.html', data=None, files=files)
-    
+            months = set_year(data.get("Mese di partenza"))
+            plot_values(
+                ["Aitot*", "Etot*", "W*", "Sf 1*", "D/S 1*", "Winv tot", "Wo"],
+                data, "caso1"
+            )
+            plot_values(
+                ["Aitot*", "Etot*", "W*", "Sf 2*", "D/S 2*", "Winv aut", "Wo"],
+                data, "caso2"
+            )
+            return render_template('dashboard.html', data=data, months=months, files=files,
+                                   plotA="caso1_plot.png", plotB="caso2_plot.png")
+    return render_template('dashboard.html', data=None, files=files)
 
 @main_bp.route('/form', methods=['GET', 'POST'])
 @login_required
 def form():
-    # files = retrive_files()
     files = get_user_files()
     data = {}
     if request.method == 'POST':
         if 'load' in request.form:
             filename = request.form.get("data_select")
             if filename:
-                # with open(f"elaborazioni/{filename}", 'r') as json_file:
-                #    data = json.load(json_file)
-                json_data = get_json(filename)
-                data = json.loads(json_data)
-                # Render form with loaded data
+                data = load_json_data(filename)
                 return render_template('form.html', files=files, data=data)
         elif 'delete' in request.form:
-            # Eliminazione del file
             filename = request.form.get("data_select")
             if filename:
-                # Recupera il file dal database e verifica se esiste
-                file_to_delete = db.session.execute(select(JsonFile).filter(
-                    JsonFile.user_id == current_user.id, JsonFile.filename == filename)).scalar()
-
+                file_to_delete = db.session.execute(
+                    select(JsonFile).filter(
+                        JsonFile.user_id == current_user.id,
+                        JsonFile.filename == filename
+                    )
+                ).scalar()
                 if file_to_delete:
                     db.session.delete(file_to_delete)
-                    db.session.commit()
-                    flash(
-                        f'File "{filename}" eliminato con successo!', 'success')
+                    try:
+                        db.session.commit()
+                        flash(f'File "{filename}" deleted successfully!', 'success')
+                    except SQLAlchemyError:
+                        db.session.rollback()
+                        flash("Database error occurred while deleting file.", "danger")
                 else:
-                    flash(f'File "{filename}" non trovato.', 'danger')
-                return redirect('form')
+                    flash(f'File "{filename}" not found.', 'danger')
+            return redirect(url_for('main_bp.form'))
         else:
             if current_user.is_authenticated:
                 json_filename = request.form.get('filename')
                 data = process_data(request)
-                check_filename = db.session.execute(select(JsonFile).filter(
-                    JsonFile.user_id == current_user.id, JsonFile.filename == json_filename)).scalar_one_or_none()
-                if check_filename:
-
-                    check_filename.json_data = json.dumps(data)
-                    db.session.commit()
-                    return redirect('form')
+                existing_file = db.session.execute(
+                    select(JsonFile).filter(
+                        JsonFile.user_id == current_user.id,
+                        JsonFile.filename == json_filename
+                    )
+                ).scalar_one_or_none()
+                if existing_file:
+                    existing_file.json_data = json.dumps(data)
                 else:
                     json_file = JsonFile(
                         filename=json_filename,
                         json_data=json.dumps(data),
-                        user_id=current_user.id)
+                        user_id=current_user.id
+                    )
                     db.session.add(json_file)
+                try:
                     db.session.commit()
                     flash('Form successfully submitted!', 'success')
-                    return redirect('form')
-    elif request.method == 'GET':
-        return render_template('form.html', data=data, files=files)
-    
+                except SQLAlchemyError:
+                    db.session.rollback()
+                    flash("Database error occurred while submitting the form.", "danger")
+                return redirect(url_for('main_bp.form'))
+    return render_template('form.html', data=data, files=files)
 
 @main_bp.route('/exchange', methods=['GET', 'POST'])
 @login_required
 def exchange():
+    files = get_user_files()
     data = {}
-    if request.method == 'POST':
-        
-        surplus_sum = 0
-        deficit_sum = 0
-        total = 0
-        print("Form data:", request.form)
-        # Get the list of selected files from the form
-        selected_files = request.form.getlist('selected_files')
-        if selected_files:
-            print("Selected files:", selected_files)  # This will show the selected files in the terminal
-            data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
-            split_json_by_ds(selected_files)
-            print(data)
-
-        
-        return render_template('exchange.html', files=get_user_files(), data=data, surplus_sum=surplus_sum, deficit_sum=deficit_sum, total=total)
-        # Process the selected files or use them as needed
-    # Render the template and pass files to the form
-    return render_template('exchange.html', files=get_user_files(), data=None, surplus_sum=0, deficit_sum=0, total=0)
-
-
-def calculate_exchange(_files):
-    sf_data = {}
     surplus_sum = 0
     deficit_sum = 0
     total = 0
-    for file in _files:
-        json_data = get_json(file)
-        data = json.loads(json_data)
-        key = data["Filename"]
-        sf_data[key] = {}
-        sf_data[key]["Sf 1 avg"] = data["Sf 1 avg"]
-        sf_data[key]["Sf 2 avg"] = data["Sf 2 avg"]
-        sf_data[key]["D/S 1 avg"] = data["D/S 1 avg"]
-        sf_data[key]["D/S 2 avg"] = data["D/S 2 avg"]
-        if data["D/S 1 avg"] > 0:
-            surplus_sum += data["D/S 1 avg"]
-        elif data["D/S 1 avg"] < 0:
-            deficit_sum += data["D/S 1 avg"]
-    
+    if request.method == 'POST':
+        selected_files = request.form.getlist('selected_files')
+        if selected_files:
+            data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
+            split_json_by_ds(selected_files)
+        return render_template('exchange.html', files=files, data=data,
+                               surplus_sum=surplus_sum, deficit_sum=deficit_sum, total=total)
+    return render_template('exchange.html', files=files, data=None,
+                           surplus_sum=0, deficit_sum=0, total=0)
+
+def calculate_exchange(file_list):
+    """
+    Process files to calculate exchange values.
+    """
+    sf_data = {}
+    surplus_sum = 0
+    deficit_sum = 0
+    for filename in file_list:
+        data = load_json_data(filename)
+        if not data:
+            continue
+        key = data.get("Filename", filename)
+        sf_data[key] = {
+            "Sf 1 avg": data.get("Sf 1 avg"),
+            "Sf 2 avg": data.get("Sf 2 avg"),
+            "D/S 1 avg": data.get("D/S 1 avg"),
+            "D/S 2 avg": data.get("D/S 2 avg")
+        }
+        ds1_avg = data.get("D/S 1 avg", 0)
+        if ds1_avg > 0:
+            surplus_sum += ds1_avg
+        elif ds1_avg < 0:
+            deficit_sum += ds1_avg
+
     total = round_floats(surplus_sum + deficit_sum)
-    surplus_sum = round_floats(surplus_sum)
-    deficit_sum = round_floats(deficit_sum)
-    sf_data = round_floats(sf_data)
-    return sf_data, surplus_sum, deficit_sum, total
+    return round_floats(sf_data), round_floats(surplus_sum), round_floats(deficit_sum), total
 
-def split_json_by_ds(_files):
-    surplus = []
-    positive_ds = []
+def split_json_by_ds(file_list):
+    """
+    Separates JSON files into positive and negative D/S lists and calls the appropriate outflow.
+    """
+    positive_entries = []
+    negative_entries = []
     sum_positive_ds = 0
-    t = 0
-    deficit = []
-    negative_ds = []
     sum_negative_ds = 0
-    v = 0
+    count_positive = 0
+    count_negative = 0
 
-    for data in _files:
-        json_data = get_json(data)
-        data = json.loads(json_data)
-        if "D/S 1*" in data and isinstance(data["D/S 1*"], list) and data["D/S 1*"]:
+    for filename in file_list:
+        data = load_json_data(filename)
+        if data and "D/S 1*" in data and isinstance(data["D/S 1*"], list) and data["D/S 1*"]:
             last_value = data["D/S 1*"][-1]
-            filename = data.get("Filename", "Unknown")
-            entry = {"Filename": filename, "Data": last_value}
-            
+            entry = {"Filename": data.get("Filename", filename), "Data": last_value}
             if last_value > 0:
-                positive_ds.append(entry)
+                positive_entries.append(entry)
                 sum_positive_ds += last_value
-                t += 1
+                count_positive += 1
             else:
-                negative_ds.append(entry)
+                negative_entries.append(entry)
                 sum_negative_ds += last_value
-                v += 1
+                count_negative += 1
 
+    if count_positive == 0:
+        positive_entries.append({"Filename": "No data", "Data": 0})
+    if count_negative == 0:
+        negative_entries.append({"Filename": "No data", "Data": 0})
 
-    if t == 0:
-        positive_ds.append({"Filename": "No data", "Data": 0})
-    if v == 0:
-        negative_ds.append({"Filename": "No data", "Data": 0})
-    
-    surplus.append(positive_ds)
-    surplus.append(sum_positive_ds) #Total sum of Surplus
-    surplus.append(t)
-
-    deficit.append(negative_ds)
-    deficit.append(sum_negative_ds) #Total sum of Deficit
-    deficit.append(v)
-
-
-    print("Positive DS:", surplus[0])
-    print("Negative DS:", deficit[0])
+    surplus = [positive_entries, sum_positive_ds, count_positive]
+    deficit = [negative_entries, sum_negative_ds, count_negative]
 
     if surplus[1] > deficit[1]:
-        outflowA(surplus, deficit, _files)
+        outflowA(surplus, deficit, file_list)
     elif surplus[1] < deficit[1]:
-        outflowB(surplus, deficit, _files)
+        outflowB(surplus, deficit, file_list)
     
     return surplus, deficit
 
-
-def outflowA(_surplus, _deficit, _files):
-    print("Outflow A")
-    delta = _surplus[1] - _deficit[1]
-    print("Delta:", delta)
-    diff_monthly = []
-    delta_monthly = []
-    delta_suplus = []
+def outflowA(surplus, deficit, file_list):
+    """
+    Processes outflow scenario A.
+    """
+    delta = surplus[1] - deficit[1]
+    diff_monthly_list = []
+    delta_monthly_list = []
     
-    for surp in _surplus[0]:
-        diff = []
-        delt = []
-        for file in _files:
-            if surp["Filename"] == file:
-                json_data = get_json(file)
-                data = json.loads(json_data)
-                
-                #Calcolo fattore delta(i)
-                delta_suplus = ((data["A*"][11] * data["Aitot*"][11])/delta)
-                
-                #Afflusso mensile - erogazioni mensili
+    for entry in surplus[0]:
+        diff_monthly = []
+        delta_monthly = []
+        for filename in file_list:
+            data = load_json_data(filename)
+            if data and entry["Filename"] == data.get("Filename", filename):
+                try:
+                    delta_suplus = (data["A*"][11] * data["Aitot*"][11]) / delta
+                except (IndexError, ZeroDivisionError, KeyError):
+                    continue
+                # Calculate monthly differences and normalized delta
                 for i in range(12):
                     d = data["A j"][i] - data["E pot j"][i] - data["E irr j"][i] - data["E ind j"][i] - data["E tra j"][i]
-                    diff.append(d) if d > 0 else diff.append(0)
-                
-                #Delta(i) "normalizzata"
+                    diff_monthly.append(d if d > 0 else 0)
                 for i in range(12):
-                    d = data["A j"][i] * diff[i] / delta_suplus
-                    delt.append(d)
-                
-        diff_monthly.append(diff)
-        delta_monthly.append(delt)
-    print("Diff Monthly:", diff_monthly)
-    print("Delta Monthly:", delta_monthly)
+                    delta_monthly.append(data["A j"][i] * diff_monthly[i] / delta_suplus)
+        diff_monthly_list.append(diff_monthly)
+        delta_monthly_list.append(delta_monthly)
+    
+    # Debug output – consider using logging in production
+    print("Diff Monthly:", diff_monthly_list)
+    print("Delta Monthly:", delta_monthly_list)
 
-
-
-
-
-    return
-
-def outflowB(_surplus, _deficit, _files):
+def outflowB(surplus, deficit, file_list):
+    """
+    Processes outflow scenario B.
+    """
     print("Outflow B")
-    return 
