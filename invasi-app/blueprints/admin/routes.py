@@ -1,23 +1,27 @@
 import sys
 sys.path.append('../../')
-from flask import Flask, render_template, request, flash, redirect, url_for, abort, send_file, Blueprint
-from flask_login import login_required, current_user
-from models import User
-from extensions import db
+
 import os
 import shutil
+from functools import wraps
+
+from flask import Flask, render_template, request, flash, redirect, url_for, abort, send_file, Blueprint
+from flask_login import login_required, current_user
+
+from models import User
+from extensions import db
 
 admin_bp = Blueprint('admin', __name__)
 
 
 def admin_required(f):
+    @wraps(f)
     @login_required
     def decorated_function(*args, **kwargs):
         if not current_user.is_admin:
             flash("Access denied. Admins only.", "danger")
             return redirect(url_for('index'))
         return f(*args, **kwargs)
-    decorated_function.__name__ = f.__name__
     return decorated_function
 
 
@@ -38,8 +42,12 @@ def manage_users(action):
         user = User.query.get(user_id)
         if user:
             db.session.delete(user)
-            db.session.commit()
-            flash("User deleted successfully.", "success")
+            try:
+                db.session.commit()
+                flash("User deleted successfully.", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash("An error occurred while deleting the user.", "danger")
         else:
             flash("User not found.", "warning")
     elif action == "add":
@@ -49,6 +57,7 @@ def manage_users(action):
         # Implement user update logic
         pass
     return redirect(url_for('admin.admin_dashboard'))
+
 
 # Export DB Route
 @admin_bp.route('/export', methods=['GET'])
@@ -60,8 +69,12 @@ def export_db():
     # Ensure the temporary export directory exists
     os.makedirs('temp_export', exist_ok=True)
 
-    # Copy the database to the export path
-    shutil.copy2('instance/invasi.db', export_path)
+    try:
+        # Copy the database to the export path
+        shutil.copy2('instance/invasi.db', export_path)
+    except Exception as e:
+        flash("An error occurred while exporting the database.", "danger")
+        return redirect(url_for('admin.admin_dashboard'))
 
     # Send the copied file as a download
     return send_file(export_path, as_attachment=True, download_name="invasi_export.db")
