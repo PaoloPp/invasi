@@ -80,7 +80,7 @@ def form():
                         flash("Database error occurred while deleting file.", "danger")
                 else:
                     flash(f'File "{filename}" not found.', 'danger')
-            return redirect(url_for('main_bp.form'))
+            return redirect(url_for('main.form'))
         else:
             if current_user.is_authenticated:
                 json_filename = request.form.get('filename')
@@ -106,7 +106,7 @@ def form():
                 except SQLAlchemyError:
                     db.session.rollback()
                     flash("Database error occurred while submitting the form.", "danger")
-                return redirect(url_for('main_bp.form'))
+                return redirect(url_for('main.form'))
     return render_template('form.html', data=data, files=files)
 
 @main_bp.route('/exchange', methods=['GET', 'POST'])
@@ -121,7 +121,7 @@ def exchange():
         selected_files = request.form.getlist('selected_files')
         if selected_files:
             data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
-            split_json_by_ds(selected_files)
+            split_json_by_deficit_surplus(selected_files)
         return render_template('exchange.html', files=files, data=data,
                                surplus_sum=surplus_sum, deficit_sum=deficit_sum, total=total)
     return render_template('exchange.html', files=files, data=None,
@@ -154,7 +154,7 @@ def calculate_exchange(file_list):
     total = round_floats(surplus_sum + deficit_sum)
     return round_floats(sf_data), round_floats(surplus_sum), round_floats(deficit_sum), total
 
-def split_json_by_ds(file_list):
+def split_json_by_deficit_surplus(file_list):
     """
     Separates JSON files into positive and negative D/S lists and calls the appropriate outflow.
     """
@@ -168,13 +168,15 @@ def split_json_by_ds(file_list):
     for filename in file_list:
         data = load_json_data(filename)
         if data and "D/S 1*" in data and isinstance(data["D/S 1*"], list) and data["D/S 1*"]:
+            #For each file, get the last value of D/S 1* to determine
+            #whether it is a surplus or deficit
             last_value = data["D/S 1*"][-1]
             entry = {"Filename": data.get("Filename", filename), "Data": last_value}
             if last_value > 0:
                 positive_entries.append(entry)
                 sum_positive_ds += last_value
                 count_positive += 1
-            else:
+            elif last_value < 0:
                 negative_entries.append(entry)
                 sum_negative_ds += last_value
                 count_negative += 1
@@ -187,7 +189,7 @@ def split_json_by_ds(file_list):
     surplus = [positive_entries, sum_positive_ds, count_positive]
     deficit = [negative_entries, sum_negative_ds, count_negative]
 
-    if surplus[1] > deficit[1]:
+    if surplus[1] > deficit[1]: #Check the sum of surplus is bigger then deficit
         outflowA(surplus, deficit, file_list)
     elif surplus[1] < deficit[1]:
         outflowB(surplus, deficit, file_list)
@@ -198,6 +200,53 @@ def outflowA(surplus, deficit, file_list):
     """
     Processes outflow scenario A.
     """
+    criteria_a1(surplus, deficit)
+
+def criteria_a1(surplus, deficit):
+    # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
+    if surplus[2] > 0:
+        for entry in surplus[0]:
+            if entry.get("Filename"):
+                json_data = load_json_data(entry.get("Filename"))
+            if json_data:
+                # Calculate sum of positive values in "D/S 1 j" for 12 months
+                sum_surplus = sum(
+                    json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
+                )
+                try:
+                    alpha_value = sum_surplus / json_data["D/S 1*"][11]
+                except (IndexError, ZeroDivisionError):
+                    alpha_value = 0
+                
+                # Store computed alpha value and the monthly computed values in the dictionary
+                entry["alpha"] = alpha_value
+                entry["alpha_surplus"] = [
+                    json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
+                    for i in range(12)
+                ]
+    if deficit[2] > 0:
+        for entry in deficit[0]:
+            if entry.get("Filename"):
+                json_data = load_json_data(entry.get("Filename"))
+            if json_data:
+                # Calculate sum of positive values in "D/S 1 j" for 12 months
+                sum_deficit = sum(
+                    json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
+                )
+                try:
+                    alpha_value = sum_deficit / json_data["D/S 1*"][11]
+                except (IndexError, ZeroDivisionError):
+                    alpha_value = 0
+
+                # Store computed alpha value and the monthly computed values in the dictionary
+                entry["alpha"] = alpha_value
+                entry["alpha_deficit"] = [
+                    json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
+                    for i in range(12)
+                ]
+    return
+    
+def criteria_a0(surplus, deficit ,file_list):
     delta = surplus[1] - deficit[1]
     diff_monthly_list = []
     delta_monthly_list = []
