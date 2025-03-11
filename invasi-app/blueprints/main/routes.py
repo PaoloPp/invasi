@@ -121,9 +121,11 @@ def exchange():
         selected_files = request.form.getlist('selected_files')
         if selected_files:
             data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
-            split_json_by_deficit_surplus(selected_files)
+            calculated_data = round_floats(split_json_by_deficit_surplus(selected_files))
+            print("Calculated Data:", calculated_data)
         return render_template('exchange.html', files=files, data=data,
-                               surplus_sum=surplus_sum, deficit_sum=deficit_sum, total=total)
+                               surplus_sum=surplus_sum, deficit_sum=deficit_sum, 
+                               calculated_data=calculated_data, total=total)
     return render_template('exchange.html', files=files, data=None,
                            surplus_sum=0, deficit_sum=0, total=0)
 
@@ -189,62 +191,66 @@ def split_json_by_deficit_surplus(file_list):
     surplus = [positive_entries, sum_positive_ds, count_positive]
     deficit = [negative_entries, sum_negative_ds, count_negative]
 
-    if surplus[1] > deficit[1]: #Check the sum of surplus is bigger then deficit
-        outflowA(surplus, deficit, file_list)
-    elif surplus[1] < deficit[1]:
-        outflowB(surplus, deficit, file_list)
+    if surplus[1] >= abs(deficit[1]): #Check the sum of surplus is bigger then deficit
+        calculated_data = outflowA(surplus, deficit)
+    elif surplus[1] < abs(deficit[1]):
+        calculated_data = outflowB(surplus, deficit)
     
-    return surplus, deficit
+    return calculated_data
 
-def outflowA(surplus, deficit, file_list):
+def outflowA(surplus, deficit):
     """
     Processes outflow scenario A.
     """
-    criteria_a1(surplus, deficit)
+    calculated_data = criteria_a1(surplus, deficit)
+    return calculated_data
 
 def criteria_a1(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
+    calculated_data = []
     if surplus[2] > 0:
         for entry in surplus[0]:
             if entry.get("Filename"):
                 json_data = load_json_data(entry.get("Filename"))
-            if json_data:
-                # Calculate sum of positive values in "D/S 1 j" for 12 months
-                sum_surplus = sum(
-                    json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
-                )
-                try:
-                    alpha_value = sum_surplus / json_data["D/S 1*"][11]
-                except (IndexError, ZeroDivisionError):
-                    alpha_value = 0
-                
-                # Store computed alpha value and the monthly computed values in the dictionary
-                entry["alpha"] = alpha_value
-                entry["alpha_surplus"] = [
-                    json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
-                    for i in range(12)
-                ]
+                if json_data:
+                    # Calculate sum of positive values in "D/S 1 j" for 12 months
+                    sum_surplus = sum(
+                        json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
+                    )
+                    try:
+                        alpha_value = sum_surplus / json_data["D/S 1*"][11]
+                    except (IndexError, ZeroDivisionError):
+                        alpha_value = 0
+
+                    # Store computed alpha value and the monthly computed values in the dictionary
+                    entry["alpha"] = alpha_value
+                    entry["alpha_surplus"] = [
+                        json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
+                        for i in range(12)
+                    ]
+                    calculated_data.append(entry)
     if deficit[2] > 0:
         for entry in deficit[0]:
             if entry.get("Filename"):
                 json_data = load_json_data(entry.get("Filename"))
-            if json_data:
-                # Calculate sum of positive values in "D/S 1 j" for 12 months
-                sum_deficit = sum(
-                    json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
-                )
-                try:
-                    alpha_value = sum_deficit / json_data["D/S 1*"][11]
-                except (IndexError, ZeroDivisionError):
-                    alpha_value = 0
+                if json_data:
+                    # Calculate sum of positive values in "D/S 1 j" for 12 months
+                    sum_deficit = sum(
+                        json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
+                    )
+                    try:
+                        alpha_value = sum_deficit / json_data["D/S 1*"][11]
+                    except (IndexError, ZeroDivisionError):
+                        alpha_value = 0
 
-                # Store computed alpha value and the monthly computed values in the dictionary
-                entry["alpha"] = alpha_value
-                entry["alpha_deficit"] = [
-                    json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
-                    for i in range(12)
-                ]
-    return
+                    # Store computed alpha value and the monthly computed values in the dictionary
+                    entry["alpha"] = alpha_value
+                    entry["alpha_deficit"] = [
+                        json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
+                        for i in range(12)
+                    ]
+                    calculated_data.append(entry)
+    return calculated_data
     
 def criteria_a0(surplus, deficit ,file_list):
     delta = surplus[1] - deficit[1]
@@ -274,8 +280,10 @@ def criteria_a0(surplus, deficit ,file_list):
     print("Diff Monthly:", diff_monthly_list)
     print("Delta Monthly:", delta_monthly_list)
 
-def outflowB(surplus, deficit, file_list):
+def outflowB(surplus, deficit):
     """
     Processes outflow scenario B.
     """
     print("Outflow B")
+    calculated_data = criteria_a1(surplus, deficit)
+    return calculated_data
