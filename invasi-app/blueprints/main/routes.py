@@ -218,7 +218,7 @@ def criteria_a1(surplus, deficit):
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
                     )
                     try:
-                        alpha_value = sum_surplus / json_data["D/S 1*"][11]
+                        alpha_value =  json_data["D/S 1*"][11] / sum_surplus 
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
@@ -238,8 +238,9 @@ def criteria_a1(surplus, deficit):
                     sum_deficit = sum(
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
                     )
+                    print(sum_deficit)
                     try:
-                        alpha_value = sum_deficit / json_data["D/S 1*"][11]
+                        alpha_value = sum_deficit / deficit[1]
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
