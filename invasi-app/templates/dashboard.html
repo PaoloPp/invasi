@@ -99,14 +99,14 @@
                 <tr>
                     <th>Mese</th>
                     <th>Cj(A)</th>
-                    <th>Cj(A')</th>
+                    <!-- <th>Cj(A')</th> -->
                     <th>Cj(ev)</th>
                     <th>Cj(inf)</th>
                     <th>Cj(ec)</th>
                     <th>Cj(pot)</th>
                     <th>Cj(irr)</th>
                     <th>Cj(ind)</th>
-                    <th>Cj(tra)</th>
+                   <!-- <th>Cj(tra)</th> -->
                 </tr>
             </thead>
             <tbody>
@@ -114,14 +114,14 @@
                 <tr>
                     <td>{{ months[i] }}</td>
                     <td>{{ data['Cj(A)'][i] }}</td>
-                    <td>{{ data['Cj(A\')'][i] }}</td>
+                    <!-- <td>{{ data['Cj(A\')'][i] }}</td> -->
                     <td>{{ data['Cj(ev)'][i] }}</td>
                     <td>{{ data['Cj(inf)'][i] }}</td>
                     <td>{{ data['Cj(ec)'][i] }}</td>
                     <td>{{ data['Cj(pot)'][i] }}</td>
                     <td>{{ data['Cj(irr)'][i] }}</td>
                     <td>{{ data['Cj(ind)'][i] }}</td>
-                    <td>{{ data['Cj(tra)'][i] }}</td>
+                    <!-- <td>{{ data['Cj(tra)'][i] }}</td> -->
                 </tr>
                 {% endfor %}
             </tbody>
@@ -179,12 +179,12 @@
                             <th colspan="7">Afflussi all'invaso</th>
                             <tr colspan="7">
                                 <th>Mese</th>
-                                <th>A<sub>mj</sub></th>
-                                <th>A*<sub>mj</sub></th>
-                                <th>A<sub>mj</sub> (tra)</th>
-                                <th>A*<sub>mj</sub> (tra)</th>
-                                <th>A<sub>mj</sub> (tot)</th>
-                                <th>A*<sub>mj</sub> (tot)</th>
+                                <th>A<sub>j</sub></th>
+                                <th>A*<sub>j</sub></th>
+                                <th>A<sub>cj</sub></th>
+                                <th>A*<sub>cj</sub></th>
+                                <th>A<sub>j</sub> (tot)</th>
+                                <th>A*<sub>j</sub> (tot)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -210,12 +210,12 @@
                             <th colspan="7">Perdite</th>
                             <tr colspan="7">
                                 <th>Mese</th>
-                                <th>P<sub>mj</sub> (ev)</th>
-                                <th>P*<sub>mj</sub> (ev)</th>
-                                <th>P<sub>mj</sub> (inf)</th>
-                                <th>P*<sub>mj</sub> (inf)</th>
-                                <th>D<sub>mj</sub> (eco)</th>
-                                <th>D*<sub>mj</sub> (eco)</th>
+                                <th>P<sub>j</sub> (ev)</th>
+                                <th>P*<sub>j</sub> (ev)</th>
+                                <th>P<sub>j</sub> (inf)</th>
+                                <th>P*<sub>j</sub> (inf)</th>
+                                <th>D<sub>j</sub> (eco)</th>
+                                <th>D*<sub>j</sub> (eco)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -241,14 +241,14 @@
                             <th colspan="9">Erogazioni</th>
                             <tr colspan="9">
                                 <th>Mese</th>
-                                <th>E<sub>mj</sub> (pot)</th>
-                                <th>E*<sub>mj</sub> (pot)</th>
-                                <th>E<sub>mj</sub> (irr)</th>
-                                <th>E*<sub>mj</sub> (irr)</th>
-                                <th>E<sub>mj</sub> (ind)</th>
-                                <th>E*<sub>mj</sub> (ind)</th>
-                                <th>E<sub>mj</sub> (tra)</th>
-                                <th>E*<sub>mj</sub> (tra)</th>
+                                <th>E<sub>j</sub> (pot)</th>
+                                <th>E*<sub>j</sub> (pot)</th>
+                                <th>E<sub>j</sub> (irr)</th>
+                                <th>E*<sub>j</sub> (irr)</th>
+                                <th>E<sub>j</sub> (ind)</th>
+                                <th>E*<sub>j</sub> (ind)</th>
+                                <th>E<sub>dj</sub></th>
+                                <th>E*<sub>dj</sub></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -277,12 +277,12 @@
                             <th colspan="7">Volumi </th>
                             <tr colspan="7">
                                 <th>Mese</th>
-                                <th>w<sub>mj</sub></th>
-                                <th>w*<sub>mj</sub></th>
-                                <th>W<sub>mj</sub></th>
-                                <th>W*<sub>mj</sub></th>
-                                <th>W<sub>mj</sub> (1)</th>
-                                <th>W<sub>mj</sub> (2)</th>
+                                <th>w<sub>j</sub></th>
+                                <th>w*<sub>j</sub></th>
+                                <th>W<sub>j</sub></th>
+                                <th>W*<sub>j</sub></th>
+                                <th>W<sub>j</sub> (1)</th>
+                                <th>W<sub>j</sub> (2)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -307,10 +307,10 @@
                             <th colspan="5">Sfiori</th>
                             <tr colspan="5">
                                 <th>Mese</th>
-                                <th>S<sub>mj</sub> (1)</th>
-                                <th>S*<sub>mj</sub> (1)</th>
-                                <th>S<sub>mj</sub> (2)</th>
-                                <th>S*<sub>mj</sub> (2)</th>
+                                <th>S<sub>j</sub> (1)</th>
+                                <th>S*<sub>j</sub> (1)</th>
+                                <th>S<sub>j</sub> (2)</th>
+                                <th>S*<sub>j</sub> (2)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -333,10 +333,10 @@
                             <th colspan="5">Deficit/Surplus</th>
                             <tr colspan="5">
                                 <th>Mese</th>
-                                <th>D/S<sub>mj</sub> (1)</th>
-                                <th>D/S*<sub>mj</sub> (1)</th>
-                                <th>D/S<sub>mj</sub> (2)</th>
-                                <th>D/S*<sub>mj</sub> (2)</th>
+                                <th>D/S<sub>j</sub> (1)</th>
+                                <th>D/S*<sub>j</sub> (1)</th>
+                                <th>D/S<sub>j</sub> (2)</th>
+                                <th>D/S*<sub>j</sub> (2)</th>
                             </tr>
                         </thead>
                         <tbody>
