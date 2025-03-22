@@ -122,10 +122,6 @@ def exchange():
         if selected_files:
             data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
             calculated_data1, calculated_data2 = split_json_by_deficit_surplus(selected_files)
-            #calculated_data1 = round_floats(calculated_data1)
-            #calculated_data2 = round_floats(calculated_data2)
-            print("Calculated_Data1:", calculated_data1)
-            print("Calculated_Data2:", calculated_data2)
         return render_template('exchange.html', files=files, data=data,
                                surplus_sum=surplus_sum, deficit_sum=deficit_sum, 
                                calculated_data1=calculated_data1, calculated_data2=calculated_data2,
@@ -206,9 +202,6 @@ def outflowA(surplus, deficit):
     """
     Processes outflow scenario A.
     """
-    #ToDelete
-    calculated_data1 = []
-    calculated_data2 = []
 
     calculated_data1 = criteria_a1(surplus, deficit)
     calculated_data2 = criteria_a2(surplus, deficit)
