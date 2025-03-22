@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,18 +12,22 @@
       table-layout: fixed;
       width: 100%;
     }
+
     .container1 {
       display: flex;
       justify-content: space-around;
     }
+
     .container1 img {
       max-width: 45%;
       height: auto;
     }
+
     .dropdown-menu {
       max-height: 200px;
       overflow-y: auto;
     }
+
     .selected-values {
       margin-bottom: 15px;
       padding: 10px;
@@ -30,6 +35,7 @@
       border-radius: 5px;
       background-color: #f9f9f9;
     }
+
     .selected-values span {
       display: inline-block;
       margin-right: 5px;
@@ -39,18 +45,22 @@
       background-color: #007bff;
       color: #fff;
     }
+
     .selected-values span:hover {
       background-color: #0056b3;
       cursor: pointer;
     }
+
     .dropdown-toggle::after {
       display: none;
     }
+
     .dropdown-menu label {
       cursor: pointer;
     }
   </style>
 </head>
+
 <body>
   {% include "navbar.html" %}
 
@@ -62,8 +72,8 @@
     </div>
     <form id="damns_select" method="POST">
       <div class="dropdown" id="dropdown-container">
-        <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton"
-          data-bs-toggle="dropdown" aria-expanded="false">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
+          aria-expanded="false">
           Select Options
         </button>
         <button type="submit" class="btn btn-primary">Submit</button>
@@ -100,7 +110,7 @@
       <tbody>
         {% for key, file in (data or {}).items() %}
         <tr>
-          <td><b>{{ key }}</b></td>  <!-- For example, 'Conza 0', 'Conza 1', etc. -->
+          <td><b>{{ key }}</b></td> <!-- For example, 'Conza 0', 'Conza 1', etc. -->
           <td>Media</td>
           <td>{{ file['D/S 1 avg'] }}</td>
           <td>{{ file['Sf 1 avg'] }}</td>
@@ -139,67 +149,211 @@
     </table>
   </div>
 
-  <!-- New Table for Calculated Data -->
-  {% if calculated_data %}
-  <div class="container mt-5 table-responsive">
-    <h2>Calculated Alpha Surplus Data</h2>
-    <table class="table table-bordered table-striped table-fixed">
-      <thead>
-        <tr>
-          <th rowspan="2">Invaso</th>
-          <th rowspan="2">Alpha Surplus</th>
-          <th colspan="12">Computed Monthly Values</th>
-        </tr>
-        <tr>
-          {% for i in range(1, 13) %}
-          <th>Month {{ i }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in calculated_data %}
-        {% if item["alpha_surplus"] %}
-        <tr>
-          <td>{{ item["Filename"] }}</td>
-          <td>{{ item["alpha"] }}</td>
-          {% for value in item["alpha_surplus"] %}
-          <td>{{ value }}</td>
-          {% endfor %}
-        </tr>
-        {% endif %}
-        {% endfor %}
-      </tbody>
-    </table>
-    
-    <table class="table table-bordered table-striped table-fixed">
-      <thead>
-        <tr>
-          <th rowspan="2">Invaso</th>
-          <th rowspan="2">Alpha Deficit</th>
-          <th colspan="12">Computed Monthly Values</th>
-        </tr>
-        <tr>
-          {% for i in range(1, 13) %}
-          <th>Month {{ i }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in calculated_data %}
-        {% if item["alpha_deficit"] %}
-        <tr>
-          <td>{{ item["Filename"] }}</td>
-          <td>{{ item["alpha"] }}</td>
-          {% for value in item["alpha_deficit"] %}
-          <td>{{ value }}</td>
-          {% endfor %}
-        </tr>
-        {% endif %}
-        {% endfor %}
-      </tbody>
-    </table>
+  {% if calculated_data1 or calculated_data2 %}
+  <div id="ExchangeList" class="container mt-5 table-responsive">
+    <ul class="nav nav-tabs" id="dataTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="criterio1-tab" data-bs-toggle="tab" data-bs-target="#criterio1"
+          type="button" role="tab" aria-controls="criterio1" aria-selected="true">
+          Criterio 1
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="criterio2-tab" data-bs-toggle="tab" data-bs-target="#criterio2" type="button"
+          role="tab" aria-controls="criterio2" aria-selected="false">
+          Criterio 2
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="criterio3-tab" data-bs-toggle="tab" data-bs-target="#criterio3" type="button"
+          role="tab" aria-controls="criterio3" aria-selected="false">
+          Criterio 3
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="dataTabsContent">
+      <div class="tab-pane fade show active" id="criterio1" role="tabpanel" aria-labelledby="criterio1-tab">
+        <h2>Calculated Alpha Surplus Data</h2>
+        <table class="table table-bordered table-striped table-fixed">
+          <thead>
+            <tr>
+              <th rowspan="2">Invaso</th>
+              <th rowspan="2">Alpha Surplus</th>
+              <th colspan="12">Trasferimenti mensili</th>
+            </tr>
+            <tr>
+              {% for i in range(1, 13) %}
+              <th>Month {{ i }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in calculated_data1 %}
+            {% if item["alpha_surplus"] %}
+            <tr>
+              <td>{{ item["Filename"] }}</td>
+              <td>{{ item["alpha"] }}</td>
+              {% for value in item["alpha_surplus"] %}
+              <td>{{ value }}</td>
+              {% endfor %}
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <table class="table table-bordered table-striped table-fixed">
+          <thead>
+            <tr>
+              <th rowspan="2">Invaso</th>
+              <th rowspan="2">Alpha Deficit</th>
+              <th colspan="12">Computed Monthly Values</th>
+            </tr>
+            <tr>
+              {% for i in range(1, 13) %}
+              <th>Month {{ i }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in calculated_data1 %}
+            {% if item["alpha_deficit"] %}
+            <tr>
+              <td>{{ item["Filename"] }}</td>
+              <td>{{ item["alpha"] }}</td>
+              {% for value in item["alpha_deficit"] %}
+              <td>{{ value }}</td>
+              {% endfor %}
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tab-pane fade" id="criterio2" role="tabpanel" aria-labelledby="criterio2-tab">
+        <h2>Calculated Alpha Surplus Data</h2>
+        <table class="table table-bordered table-striped table-fixed">
+          <thead>
+            <tr>
+              <th rowspan="2">Invaso</th>
+              <th rowspan="2">Alpha Surplus</th>
+              <th colspan="12">Trasferimenti mensili</th>
+            </tr>
+            <tr>
+              {% for i in range(1, 13) %}
+              <th>Month {{ i }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in calculated_data2 %}
+            {% if item["alpha_surplus"] %}
+            <tr>
+              <td>{{ item["Filename"] }}</td>
+              <td>{{ item["alpha"] }}</td>
+              {% for value in item["alpha_surplus"] %}
+              <td>{{ value }}</td>
+              {% endfor %}
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <table class="table table-bordered table-striped table-fixed">
+          <thead>
+            <tr>
+              <th rowspan="2">Invaso</th>
+              <th rowspan="2">Alpha Deficit</th>
+              <th colspan="12">Computed Monthly Values</th>
+            </tr>
+            <tr>
+              {% for i in range(1, 13) %}
+              <th>Month {{ i }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in calculated_data2 %}
+            {% if item["alpha_deficit"] %}
+            <tr>
+              <td>{{ item["Filename"] }}</td>
+              <td>{{ item["alpha"] }}</td>
+              {% for value in item["alpha_deficit"] %}
+              <td>{{ value }}</td>
+              {% endfor %}
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tab-pane fade" id="criterio3" role="tabpanel" aria-labelledby="criterio3-tab">
+        <h2>Calculated Alpha Surplus Data</h2>
+        <table class="table table-bordered table-striped table-fixed">
+          <thead>
+            <tr>
+              <th rowspan="2">Invaso</th>
+              <th rowspan="2">Alpha Surplus</th>
+              <th colspan="12">Trasferimenti mensili</th>
+            </tr>
+            <tr>
+              {% for i in range(1, 13) %}
+              <th>Month {{ i }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in calculated_data3 %}
+            {% if item["alpha_surplus"] %}
+            <tr>
+              <td>{{ item["Filename"] }}</td>
+              <td>{{ item["alpha"] }}</td>
+              {% for value in item["alpha_surplus"] %}
+              <td>{{ value }}</td>
+              {% endfor %}
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <table class="table table-bordered table-striped table-fixed">
+          <thead>
+            <tr>
+              <th rowspan="2">Invaso</th>
+              <th rowspan="2">Alpha Deficit</th>
+              <th colspan="12">Computed Monthly Values</th>
+            </tr>
+            <tr>
+              {% for i in range(1, 13) %}
+              <th>Month {{ i }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in calculated_data3 %}
+            {% if item["alpha_deficit"] %}
+            <tr>
+              <td>{{ item["Filename"] }}</td>
+              <td>{{ item["alpha"] }}</td>
+              {% for value in item["alpha_deficit"] %}
+              <td>{{ value }}</td>
+              {% endfor %}
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
   </div>
   {% endif %}
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
@@ -254,4 +408,5 @@
     });
   </script>
 </body>
+
 </html>

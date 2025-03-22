@@ -129,13 +129,6 @@
 
         <br>
 
-        <div class="text-center">
-            <button id="toggleViewPre" class="btn btn-secondary">Risultati</button>
-            <button id="toggleViewPost" class="btn btn-secondary">Deficit e Surplus</button>
-        </div>
-
-        <br>
-
         <div id="PreCorrezioni" class="table-responsive">
             <ul class="nav nav-tabs" id="dataTabs" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -360,69 +353,6 @@
             </div>
         </div>
 
-        <div id="PostCorrezioni" class="table-responsive" style="display:none;">
-            <p>Post correzioni</p>
-
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <tr>
-                        <th rowspan="2">Invaso</th>
-                        <th rowspan="2">Condizione idrologica</th>
-                        <th colspan="2">Caso 1 (Winv tot)</th>
-                        <th colspan="2">Caso 2 (Winv aut)</th>
-                    </tr>
-                    <tr>
-                        <th>S/D<br>(Mm³)</th>
-                        <th>S<br>(Mm³)</th>
-                        <th>S/D<br>(Mm³)</th>
-                        <th>S<br>(Mm³)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><b> {{ data['Filename'] }}</b></td>
-                        <td>Media</td>
-                        <td> {{ data['D/S 1 avg'] }} </td>
-                        <td> {{ data['Sf 1 avg'] }}</td>
-                        <td> {{ data['D/S 2 avg'] }} </td>
-                        <td> {{ data['Sf 2 avg'] }} </td>
-                    </tr>
-                </tbody>
-                
-                <br>
-
-                <table class="table table-bordered table-striped table-fixed">
-                    <thead>
-                        <tr>
-                            <th colspan="4">Condizione idrologica media</th>
-                        </tr>
-                        <tr>
-                            <th></th>
-                            <th>Invasi</th>
-                            <th>Disponibilità traversa SV<br>(Mm³)</th>
-                            <th>Totale<br>(Mm³)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="row-label">Surplus<br>(Mm³)</td>
-                            <td>+35.53</td>
-                            <td rowspan="2" style="vertical-align: middle">+166.47</td>
-                            <td rowspan="2" class="highlight" style="vertical-align: middle">+129.22</td>
-                        </tr>
-                        <tr>
-                            <td class="row-label">Deficit<br>(Mm³)</td>
-                            <td>72.68</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </table>
-
-            <div class="container1">
-                <img src="{{ url_for('static', filename=plotA) }}" alt="Caso 1">
-                <img src="{{ url_for('static', filename=plotB) }}" alt="Caso 2">
-            </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>

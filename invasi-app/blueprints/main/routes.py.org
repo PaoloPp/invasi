@@ -121,15 +121,11 @@ def exchange():
         selected_files = request.form.getlist('selected_files')
         if selected_files:
             data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
-            calculated_data1, calculated_data2 = split_json_by_deficit_surplus(selected_files)
-            #calculated_data1 = round_floats(calculated_data1)
-            #calculated_data2 = round_floats(calculated_data2)
-            print("Calculated_Data1:", calculated_data1)
-            print("Calculated_Data2:", calculated_data2)
+            calculated_data = round_floats(split_json_by_deficit_surplus(selected_files))
+            print("Calculated Data:", calculated_data)
         return render_template('exchange.html', files=files, data=data,
                                surplus_sum=surplus_sum, deficit_sum=deficit_sum, 
-                               calculated_data1=calculated_data1, calculated_data2=calculated_data2,
-                               total=total)
+                               calculated_data=calculated_data, total=total)
     return render_template('exchange.html', files=files, data=None,
                            surplus_sum=0, deficit_sum=0, total=0)
 
@@ -196,31 +192,25 @@ def split_json_by_deficit_surplus(file_list):
     deficit = [negative_entries, sum_negative_ds, count_negative]
 
     if surplus[1] >= abs(deficit[1]): #Check the sum of surplus is bigger then deficit
-        calculated_data1, calculated_data2 = outflowA(surplus, deficit)
+        calculated_data = outflowA(surplus, deficit)
     elif surplus[1] < abs(deficit[1]):
-        calculated_data1, calculated_data2 = outflowB(surplus, deficit)
+        calculated_data = outflowB(surplus, deficit)
     
-    return calculated_data1, calculated_data2
+    return calculated_data
 
 def outflowA(surplus, deficit):
     """
     Processes outflow scenario A.
     """
-    #ToDelete
-    calculated_data1 = []
-    calculated_data2 = []
-
-    calculated_data1 = criteria_a1(surplus, deficit)
-    calculated_data2 = criteria_a2(surplus, deficit)
-    return calculated_data1, calculated_data2
+    calculated_data = criteria_a1(surplus, deficit)
+    #calculated_data = criteria_a2(surplus, deficit)
+    return calculated_data
 
 def criteria_a1(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
-    surplus_tmp = surplus
-    deficit_tmp = deficit
-    calculated_data1 = []
-    if surplus_tmp[2] > 0:
-        for entry in surplus_tmp[0]:
+    calculated_data = []
+    if surplus[2] > 0:
+        for entry in surplus[0]:
             if entry.get("Filename"):
                 json_data = load_json_data(entry.get("Filename"))
                 if json_data:
@@ -239,9 +229,9 @@ def criteria_a1(surplus, deficit):
                         json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
                         for i in range(12)
                     ]
-                    calculated_data1.append(entry)
-    if deficit_tmp[2] > 0:
-        for entry in deficit_tmp[0]:
+                    calculated_data.append(entry)
+    if deficit[2] > 0:
+        for entry in deficit[0]:
             if entry.get("Filename"):
                 json_data = load_json_data(entry.get("Filename"))
                 if json_data:
@@ -261,18 +251,14 @@ def criteria_a1(surplus, deficit):
                         json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
                         for i in range(12)
                     ]
-                    calculated_data1.append(entry)
-
-    calculated_data1 = round_floats(calculated_data1)
-    return calculated_data1
+                    calculated_data.append(entry)
+    return calculated_data
 
 def criteria_a2(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
-    surplus_tmp = surplus
-    deficit_tmp = deficit
-    calculated_data2 = []
-    if deficit_tmp[2] > 0:
-        for entry in deficit_tmp[0]:
+    calculated_data = []
+    if deficit[2] > 0:
+        for entry in deficit[0]:
             if entry.get("Filename"):
                 json_data = load_json_data(entry.get("Filename"))
                 if json_data:
@@ -292,9 +278,9 @@ def criteria_a2(surplus, deficit):
                         json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
                         for i in range(12)
                     ]
-                    calculated_data2.append(entry)
-    if surplus_tmp[2] > 0:
-        for entry in surplus_tmp[0]:
+                    calculated_data.append(entry)
+    if surplus[2] > 0:
+        for entry in surplus[0]:
             if entry.get("Filename"):
                 json_data = load_json_data(entry.get("Filename"))
                 if json_data:
@@ -313,9 +299,8 @@ def criteria_a2(surplus, deficit):
                         json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
                         for i in range(12)
                     ]
-                    calculated_data2.append(entry)
-    calculated_data2 = round_floats(calculated_data2)
-    return calculated_data2
+                    calculated_data.append(entry)
+    return calculated_data
     
 def criteria_a0(surplus, deficit ,file_list):
     delta = surplus[1] - deficit[1]
