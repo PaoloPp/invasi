@@ -6,7 +6,7 @@ from io import StringIO
 import os, shutil, json
 
 from models import db, User, JsonFile
-from utilities import get_json, round_floats, plot_values, set_year, get_user_files, process_data
+from utilities import get_json, round_floats, plot_values, set_year, get_user_files, get_past_exchange, process_data
 
 main_bp = Blueprint('main', __name__)
 
@@ -113,6 +113,7 @@ def form():
 @login_required
 def exchange():
     files = get_user_files()
+    past_exchange = get_past_exchange()
     data = {}
     surplus_sum = 0
     deficit_sum = 0
@@ -126,7 +127,9 @@ def exchange():
                                surplus_sum=surplus_sum, deficit_sum=deficit_sum, 
                                calculated_data1=calculated_data1, calculated_data2=calculated_data2,
                                total=total)
-    return render_template('exchange.html', files=files, data=None,
+
+
+    return render_template('exchange.html', past_exchange = past_exchange, files=files, data=None,
                            surplus_sum=0, deficit_sum=0, total=0)
 
 def calculate_exchange(file_list):
@@ -209,6 +212,7 @@ def outflowA(surplus, deficit):
 
 def criteria_a1(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
+    k_a = [0] * 12
     surplus_tmp = surplus
     deficit_tmp = deficit
     calculated_data1 = []
@@ -228,11 +232,16 @@ def criteria_a1(surplus, deficit):
 
                     # Store computed alpha value and the monthly computed values in the dictionary
                     entry["alpha"] = alpha_value
-                    entry["alpha_surplus"] = [
-                        json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
-                        for i in range(12)
-                    ]
+                    entry["alpha_surplus"] = []
+                    for i in range(12):
+                        if json_data["D/S 1 j"][i] > 0:
+                            entry["alpha_surplus"].append(json_data["D/S 1 j"][i] * alpha_value)
+                            k_a[i] = 1
+                        else:
+                            entry["alpha_surplus"].append(0)
+                    
                     calculated_data1.append(entry)
+
     if deficit_tmp[2] > 0:
         for entry in deficit_tmp[0]:
             if entry.get("Filename"):
@@ -251,7 +260,7 @@ def criteria_a1(surplus, deficit):
                     # Store computed alpha value and the monthly computed values in the dictionary
                     entry["alpha"] = alpha_value
                     entry["alpha_deficit"] = [
-                        json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
+                        abs(json_data["D/S 1 j"][i] * alpha_value) if k_a[i] == 1 else 0
                         for i in range(12)
                     ]
                     calculated_data1.append(entry)
@@ -261,6 +270,7 @@ def criteria_a1(surplus, deficit):
 
 def criteria_a2(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
+    k_b = [0] * 12
     surplus_tmp = surplus
     deficit_tmp = deficit
     calculated_data2 = []
@@ -281,11 +291,16 @@ def criteria_a2(surplus, deficit):
 
                     # Store computed alpha value and the monthly computed values in the dictionary
                     entry["alpha"] = alpha_value
-                    entry["alpha_deficit"] = [
-                        json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
-                        for i in range(12)
-                    ]
+                    entry["alpha_deficit"] = []
+                    for i in range(12):
+                        if json_data["D/S 1 j"][i] < 0:
+                            entry["alpha_deficit"].append(abs(json_data["D/S 1 j"][i] * alpha_value))
+                            k_b[i] = 1
+                        else:
+                            entry["alpha_deficit"].append(0)
+
                     calculated_data2.append(entry)
+
     if surplus_tmp[2] > 0:
         for entry in surplus_tmp[0]:
             if entry.get("Filename"):
@@ -303,40 +318,21 @@ def criteria_a2(surplus, deficit):
                     # Store computed alpha value and the monthly computed values in the dictionary
                     entry["alpha"] = alpha_value
                     entry["alpha_surplus"] = [
-                        json_data["D/S 1 j"][i] * alpha_value if json_data["D/S 1 j"][i] > 0 else 0
+                        json_data["D/S 1 j"][i] * alpha_value if k_b[i] == 1 else 0
                         for i in range(12)
                     ]
                     calculated_data2.append(entry)
     calculated_data2 = round_floats(calculated_data2)
     return calculated_data2
     
-def criteria_a0(surplus, deficit ,file_list):
-    delta = surplus[1] - deficit[1]
-    diff_monthly_list = []
-    delta_monthly_list = []
-    
-    for entry in surplus[0]:
-        diff_monthly = []
-        delta_monthly = []
-        for filename in file_list:
-            data = load_json_data(filename)
-            if data and entry["Filename"] == data.get("Filename", filename):
-                try:
-                    delta_suplus = (data["A*"][11] * data["Aitot*"][11]) / delta
-                except (IndexError, ZeroDivisionError, KeyError):
-                    continue
-                # Calculate monthly differences and normalized delta
-                for i in range(12):
-                    d = data["A j"][i] - data["E pot j"][i] - data["E irr j"][i] - data["E ind j"][i] - data["E tra j"][i]
-                    diff_monthly.append(d if d > 0 else 0)
-                for i in range(12):
-                    delta_monthly.append(data["A j"][i] * diff_monthly[i] / delta_suplus)
-        diff_monthly_list.append(diff_monthly)
-        delta_monthly_list.append(delta_monthly)
-    
-    # Debug output – consider using logging in production
-    print("Diff Monthly:", diff_monthly_list)
-    print("Delta Monthly:", delta_monthly_list)
+def criterio_a3(surplus, deficit, lambda_value):
+    calculated_data3 = []
+    surplus_tmp = surplus
+    deficit_tmp = deficit
+    lambda_surplus = lambda_value
+    lambda_deficit = 1 - lambda_value
+
+    return calculated_data3
 
 def outflowB(surplus, deficit):
     """

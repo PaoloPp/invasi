@@ -1,6 +1,6 @@
 from itertools import cycle
 from extensions import db
-from models import JsonFile, User
+from models import JsonFile, User, PastExchange
 from flask_login import current_user
 
 import matplotlib.pyplot as plt
@@ -135,6 +135,9 @@ def process_data(request):
 
 def get_user_files():
     return db.session.execute(db.select(JsonFile.filename).filter_by(user_id=current_user.id)).scalars().all()
+
+def get_past_exchange():
+    return db.session.execute(db.select(PastExchange.filename).filter_by(user_id=current_user.id)).scalars().all()
 
 def get_json(filename_selected):
     return db.session.execute(db.select(JsonFile.json_data).filter_by(filename=filename_selected)).scalar()

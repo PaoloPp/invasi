@@ -25,9 +25,10 @@ MarkupSafe==3.0.1
 matplotlib==3.9.2
 meson==1.5.2
 mongoengine==0.29.1
-numpy==2.1.2
+numpy==2.2.4
 packaging==24.1
 pillow==11.0.0
+pybind11==2.13.6
 pycparser==2.22
 pymongo==4.10.1
 pyparsing==3.2.0
@@ -39,4 +40,4 @@ SQLAlchemy==2.0.36
 typing_extensions==4.12.2
 urllib3==2.2.3
 Werkzeug==3.0.4
-#wheel @ file:///opt/homebrew/Cellar/python%403.13/3.13.0_1/libexec/wheel-0.44.0-py3-none-any.whl#sha256=f49b82715dce6365f75eddcb0a9bb47d0d46feaf14bbc739dfcbd677b7073f5b
+wheel @ file:///opt/homebrew/Cellar/python%403.13/3.13.0_1/libexec/wheel-0.44.0-py3-none-any.whl#sha256=f49b82715dce6365f75eddcb0a9bb47d0d46feaf14bbc739dfcbd677b7073f5b

@@ -88,6 +88,19 @@
         </ul>
       </div>
     </form>
+
+    <form id="past_select" method="POST">
+      <select class="form-select" id="past_select" name="past_select" required>
+          <option value="">-- Select a file --</option>
+          {% for file in past_exchange %}
+          <option value="{{ file }}">{{ file }}</option>
+          {% endfor %}
+      </select>
+      <div class="text-center">
+          <br>
+          <button type="submit" class="btn btn-primary">Submit</button>
+      </div>
+  </form>
   </div>
 
   <div class="container mt-5 table-responsive">
