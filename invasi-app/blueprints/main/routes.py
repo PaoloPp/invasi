@@ -213,6 +213,7 @@ def outflowA(surplus, deficit):
 def criteria_a1(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
     k_a = [0] * 12
+    edj_tot = 0
     surplus_tmp = surplus
     deficit_tmp = deficit
     calculated_data1 = []
@@ -236,6 +237,7 @@ def criteria_a1(surplus, deficit):
                     for i in range(12):
                         if json_data["D/S 1 j"][i] > 0:
                             entry["alpha_surplus"].append(json_data["D/S 1 j"][i] * alpha_value)
+                            edj_tot += json_data["D/S 1 j"][i] * alpha_value
                             k_a[i] = 1
                         else:
                             entry["alpha_surplus"].append(0)
@@ -260,8 +262,7 @@ def criteria_a1(surplus, deficit):
                     # Store computed alpha value and the monthly computed values in the dictionary
                     entry["alpha"] = alpha_value
                     entry["alpha_deficit"] = [
-                        abs(json_data["D/S 1 j"][i] * alpha_value) if k_a[i] == 1 else 0
-                        for i in range(12)
+                        edj_tot * alpha_value if k_a[i] == 1 else 0 for i in range(12)
                     ]
                     calculated_data1.append(entry)
 
@@ -271,6 +272,7 @@ def criteria_a1(surplus, deficit):
 def criteria_a2(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
     k_b = [0] * 12
+    adj_tot = 0
     surplus_tmp = surplus
     deficit_tmp = deficit
     calculated_data2 = []
@@ -295,6 +297,7 @@ def criteria_a2(surplus, deficit):
                     for i in range(12):
                         if json_data["D/S 1 j"][i] < 0:
                             entry["alpha_deficit"].append(abs(json_data["D/S 1 j"][i] * alpha_value))
+                            adj_tot = abs(json_data["D/S 1 j"][i] * alpha_value)
                             k_b[i] = 1
                         else:
                             entry["alpha_deficit"].append(0)
@@ -318,8 +321,7 @@ def criteria_a2(surplus, deficit):
                     # Store computed alpha value and the monthly computed values in the dictionary
                     entry["alpha"] = alpha_value
                     entry["alpha_surplus"] = [
-                        json_data["D/S 1 j"][i] * alpha_value if k_b[i] == 1 else 0
-                        for i in range(12)
+                        adj_tot * alpha_value if k_b[i] == 1 else 0 for i in range(12)
                     ]
                     calculated_data2.append(entry)
     calculated_data2 = round_floats(calculated_data2)
