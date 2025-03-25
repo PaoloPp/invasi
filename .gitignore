@@ -11,3 +11,8 @@ secret.py
 invasi-app/lib/
 invasi-app/bin/
 invasi-app/temp_export/
+venv/
+venv/*
+command
+containers.json
+*.json
