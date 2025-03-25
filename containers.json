@@ -1,8 +1,0 @@
-{
-    "invasi": {
-        "image": ":invasi-flask-service.invasi-flask-container.16",
-        "ports": {
-            "8080": "HTTP"
-        }
-    }
-}

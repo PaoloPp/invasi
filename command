@@ -1,2 +1,0 @@
-aws lightsail push-container-image --service-name invasi-flask-service --label invasi-flask-container --image invasi-container
-aws lightsail create-container-service-deployment --service-name invasi-flask-service --containers file://containers.json --public-endpoint file://public-endpoint.json
