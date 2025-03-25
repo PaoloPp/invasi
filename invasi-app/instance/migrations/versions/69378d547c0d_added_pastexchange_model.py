@@ -1,8 +1,8 @@
 """Added PastExchange model
 
-Revision ID: dd40be7acf35
+Revision ID: 69378d547c0d
 Revises: 
-Create Date: 2025-03-24 16:39:45.038782
+Create Date: 2025-03-25 17:09:15.346018
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'dd40be7acf35'
+revision = '69378d547c0d'
 down_revision = None
 branch_labels = None
 depends_on = None
