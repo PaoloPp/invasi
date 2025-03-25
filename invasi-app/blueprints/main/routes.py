@@ -5,8 +5,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from io import StringIO
 import os, shutil, json
 
-from models import db, User, JsonFile
-from utilities import get_json, round_floats, plot_values, set_year, get_user_files, get_past_exchange, process_data
+from models import db, User, JsonFile, PastExchange
+from utilities import *
 
 main_bp = Blueprint('main', __name__)
 
@@ -85,6 +85,7 @@ def form():
             if current_user.is_authenticated:
                 json_filename = request.form.get('filename')
                 data = process_data(request)
+
                 existing_file = db.session.execute(
                     select(JsonFile).filter(
                         JsonFile.user_id == current_user.id,
@@ -106,6 +107,7 @@ def form():
                 except SQLAlchemyError:
                     db.session.rollback()
                     flash("Database error occurred while submitting the form.", "danger")
+
                 return redirect(url_for('main.form'))
     return render_template('form.html', data=data, files=files)
 
@@ -123,14 +125,45 @@ def exchange():
         if selected_files:
             data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
             calculated_data1, calculated_data2 = split_json_by_deficit_surplus(selected_files)
-        return render_template('exchange.html', files=files, data=data,
+            db_data = []
+
+            db_data.append(nameExchange(calculated_data1))
+            db_data.append(calculated_data1)
+            db_data.append(calculated_data2)
+            
+            if check_entry_existance(db_data[0], current_user, PastExchange):
+                flash("Entry already exists", "danger")
+            else:
+                entry = PastExchange(
+                    filename=db_data[0],
+                    json_data=json.dumps(db_data),
+                    user_id=current_user.id
+                )
+                db.session.add(entry)
+            try:
+                db.session.commit()
+                flash('Form successfully submitted!', 'success')
+            except SQLAlchemyError:
+                db.session.rollback()
+                flash("Database error occurred while submitting the form.", "danger")
+        past_exchange = get_past_exchange()
+        return render_template('exchange.html', past_exchange=past_exchange, files=files, data=data,
                                surplus_sum=surplus_sum, deficit_sum=deficit_sum, 
                                calculated_data1=calculated_data1, calculated_data2=calculated_data2,
                                total=total)
 
 
-    return render_template('exchange.html', past_exchange = past_exchange, files=files, data=None,
+    return render_template('exchange.html', past_exchange=past_exchange, files=files, data=None,
                            surplus_sum=0, deficit_sum=0, total=0)
+
+
+def nameExchange(calculated_data):
+    name = ''
+    for i in range(len(calculated_data)):
+        name += calculated_data[i].get("Filename")
+        if (i < len(calculated_data) - 1):
+            name = name + '-'
+    return name
 
 def calculate_exchange(file_list):
     """

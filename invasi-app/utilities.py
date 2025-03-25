@@ -2,11 +2,20 @@ from itertools import cycle
 from extensions import db
 from models import JsonFile, User, PastExchange
 from flask_login import current_user
+from sqlalchemy import select
 
 import matplotlib.pyplot as plt
 import os
 
-
+def check_entry_existance(_filename, _current_user, _table):
+    existing_file = db.session.execute(
+                    select(_table).filter(
+                        _table.user_id == _current_user.id,
+                        _table.filename == _filename
+                    )
+                ).scalar_one_or_none()
+    return existing_file
+    
 def set_year(_month):
     months = []
     tmp_months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
