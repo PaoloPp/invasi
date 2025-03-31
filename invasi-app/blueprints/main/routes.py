@@ -3,7 +3,9 @@ from flask_login import login_required, current_user
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from io import StringIO
-import os, shutil, json
+from collections import defaultdict
+import copy
+import json
 
 from models import db, User, JsonFile, PastExchange
 from utilities import *
@@ -124,12 +126,18 @@ def exchange():
         selected_files = request.form.getlist('selected_files')
         if selected_files:
             data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
-            calculated_data1, calculated_data2 = split_json_by_deficit_surplus(selected_files)
+            calculated_data1, calculated_data2, calculated_data3 = split_json_by_deficit_surplus(selected_files)
+            print("Calc1")
+            print(calculated_data1)
+            print("Calc2")
+            print(calculated_data2)
+            print("Calc3")
+            print(calculated_data3)
             db_data = []
 
             db_data.append(nameExchange(calculated_data1))
-            db_data.append(calculated_data1)
             db_data.append(calculated_data2)
+            db_data.append(calculated_data3)
             
             if check_entry_existance(db_data[0], current_user, PastExchange):
                 flash("Entry already exists", "danger")
@@ -150,7 +158,7 @@ def exchange():
         return render_template('exchange.html', past_exchange=past_exchange, files=files, data=data,
                                surplus_sum=surplus_sum, deficit_sum=deficit_sum, 
                                calculated_data1=calculated_data1, calculated_data2=calculated_data2,
-                               total=total)
+                               calculated_data3=calculated_data3, total=total)
 
 
     return render_template('exchange.html', past_exchange=past_exchange, files=files, data=None,
@@ -228,11 +236,11 @@ def split_json_by_deficit_surplus(file_list):
     deficit = [negative_entries, sum_negative_ds, count_negative]
 
     if surplus[1] >= abs(deficit[1]): #Check the sum of surplus is bigger then deficit
-        calculated_data1, calculated_data2 = outflowA(surplus, deficit)
+        calculated_data1, calculated_data2, calculated_data3 = outflowA(surplus, deficit)
     elif surplus[1] < abs(deficit[1]):
-        calculated_data1, calculated_data2 = outflowB(surplus, deficit)
+        calculated_data1, calculated_data2, calculated_data3 = outflowB(surplus, deficit)
     
-    return calculated_data1, calculated_data2
+    return calculated_data1, calculated_data2, calculated_data3
 
 def outflowA(surplus, deficit):
     """
@@ -241,7 +249,8 @@ def outflowA(surplus, deficit):
 
     calculated_data1 = criteria_a1(surplus, deficit)
     calculated_data2 = criteria_a2(surplus, deficit)
-    return calculated_data1, calculated_data2
+    calculated_data3 = criterio_a3(surplus, deficit, 0.7)
+    return calculated_data1, calculated_data2, calculated_data3
 
 def criteria_a1(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
@@ -300,6 +309,7 @@ def criteria_a1(surplus, deficit):
                     calculated_data1.append(entry)
 
     calculated_data1 = round_floats(calculated_data1)
+
     return calculated_data1
 
 def criteria_a2(surplus, deficit):
@@ -361,13 +371,162 @@ def criteria_a2(surplus, deficit):
     return calculated_data2
     
 def criterio_a3(surplus, deficit, lambda_value):
-    calculated_data3 = []
+    calculated_data_3 = []
+    calculated_data_31 = []
+    calculated_data_32 = []
+    k_a = [0] * 12
+    k_b = [0] * 12
+    edj_tot = 0
+    adj_tot = 0
     surplus_tmp = surplus
     deficit_tmp = deficit
     lambda_surplus = lambda_value
     lambda_deficit = 1 - lambda_value
 
-    return calculated_data3
+    #Criterio A1
+    if surplus_tmp[2] > 0:
+        for entry in surplus_tmp[0]:
+            if entry.get("Filename"):
+                json_data = load_json_data(entry.get("Filename"))
+                if json_data:
+                    # Calculate sum of positive values in "D/S 1 j" for 12 months
+                    sum_surplus = sum(
+                        json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
+                    )
+                    try:
+                        alpha_value =  json_data["D/S 1*"][11] / sum_surplus 
+                    except (IndexError, ZeroDivisionError):
+                        alpha_value = 0
+                    # Store computed alpha value and the monthly computed values in the dictionary
+                    entry["alpha"] = alpha_value
+                    entry["alpha_surplus"] = []
+                    for i in range(12):
+                        if json_data["D/S 1 j"][i] > 0:
+                            entry["alpha_surplus"].append(json_data["D/S 1 j"][i] * alpha_value * lambda_surplus)
+                            k_a[i] = 1
+                        else:
+                            entry["alpha_surplus"].append(0)
+                    calculated_data_31.append(entry)
+    if deficit_tmp[2] > 0:
+        for entry in deficit_tmp[0]:
+            if entry.get("Filename"):
+                json_data = load_json_data(entry.get("Filename"))
+                if json_data:
+                    # Calculate sum of positive values in "D/S 1 j" for 12 months
+                    sum_deficit = sum(
+                        json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
+                    )
+                    
+                    try:
+                        alpha_value = json_data["D/S 1*"][11] / deficit[1]
+                    except (IndexError, ZeroDivisionError):
+                        alpha_value = 0
+
+                    # Store computed alpha value and the monthly computed values in the dictionary
+                    entry["alpha"] = alpha_value
+                    entry["alpha_deficit"] = [
+                        edj_tot * alpha_value if k_a[i] == 1 else 0 for i in range(12)
+                    ]
+                    calculated_data_31.append(entry)
+
+    #Criterio A2
+    deficit_tmp = deficit
+    surplus_tmp = surplus
+    if deficit_tmp[2] > 0:
+        for entry in deficit_tmp[0]:
+            if entry.get("Filename"):
+                json_data = load_json_data(entry.get("Filename"))
+                if json_data:
+                    # Calculate sum of positive values in "D/S 1 j" for 12 months
+                    sum_deficit = sum(
+                        json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
+                    )
+                    
+                    try:
+                        alpha_value = json_data["D/S 1*"][11] / sum_deficit
+                    except (IndexError, ZeroDivisionError):
+                        alpha_value = 0
+
+                    # Store computed alpha value and the monthly computed values in the dictionary
+                    entry["alpha"] = alpha_value
+                    entry["alpha_deficit"] = []
+                    for i in range(12):
+                        if json_data["D/S 1 j"][i] < 0:
+                            entry["alpha_deficit"].append(abs(json_data["D/S 1 j"][i] * alpha_value * lambda_deficit))
+                            adj_tot = abs(json_data["D/S 1 j"][i] * alpha_value * lambda_deficit)
+                            k_b[i] = 1
+                        else:
+                            entry["alpha_deficit"].append(0)
+
+                    calculated_data_32.append(entry)
+
+    if surplus_tmp[2] > 0:
+        for entry in surplus_tmp[0]:
+            if entry.get("Filename"):
+                json_data = load_json_data(entry.get("Filename"))
+                if json_data:
+                    # Calculate sum of positive values in "D/S 1 j" for 12 months
+                    sum_surplus = sum(
+                        json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
+                    )
+                    try:
+                        alpha_value =  json_data["D/S 1*"][11] / surplus[1]
+                    except (IndexError, ZeroDivisionError):
+                        alpha_value = 0
+
+                    # Store computed alpha value and the monthly computed values in the dictionary
+                    entry["alpha"] = alpha_value
+                    entry["alpha_surplus"] = [
+                        adj_tot * alpha_value if k_b[i] == 1 else 0 for i in range(12)
+                    ]
+                    calculated_data_32.append(entry)
+
+    aggregated_data = {}
+
+    # First, copy all entries from criterio_a3_1
+    for entry in calculated_data_31:
+        place = entry['Filename']
+        aggregated_data[place] = copy.deepcopy(entry)  # Keep the original structure
+
+    # Now, update or merge entries from criterio_a3_2
+    for entry in calculated_data_32:
+        place = entry['Filename']
+
+        if place in aggregated_data:
+            # Sum alpha_deficit if present
+            if 'alpha_deficit' in entry:
+                if 'alpha_deficit' in aggregated_data[place]:
+                    aggregated_data[place]['alpha_deficit'] = [
+                        aggregated_data[place]['alpha_deficit'][i] + entry['alpha_deficit'][i]
+                        for i in range(12)
+                    ]
+                else:
+                    aggregated_data[place]['alpha_deficit'] = entry['alpha_deficit']
+
+            # Sum alpha_surplus if present
+            if 'alpha_surplus' in entry:
+                if 'alpha_surplus' in aggregated_data[place]:
+                    aggregated_data[place]['alpha_surplus'] = [
+                        aggregated_data[place]['alpha_surplus'][i] + entry['alpha_surplus'][i]
+                        for i in range(12)
+                    ]
+                else:
+                    aggregated_data[place]['alpha_surplus'] = entry['alpha_surplus']
+        else:
+            # If the place is not already in aggregated_data, add it as is
+            aggregated_data[place] = copy.deepcopy(entry)
+
+    # Convert back to a list to match the original format
+    calculated_data_3 = list(aggregated_data.values())
+    calculated_data_3 = round_floats(calculated_data_3)
+
+    print("Criterio A3.1")
+    print(round_floats(calculated_data_31))
+    print("Criterio A3.2")
+    print(round_floats(calculated_data_32))
+    print("Summed Values")
+    print(calculated_data_3)
+    return calculated_data_3
 
 def outflowB(surplus, deficit):
     """
