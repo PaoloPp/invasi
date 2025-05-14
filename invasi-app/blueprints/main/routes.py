@@ -12,6 +12,7 @@ from utilities import *
 
 main_bp = Blueprint('main', __name__)
 
+
 def load_json_data(filename):
     """
     Helper to load and parse JSON data.
@@ -24,9 +25,24 @@ def load_json_data(filename):
         flash(f"Error parsing JSON from {filename}: {e}", "danger")
         return None
 
+
+def load_past_json_data(filename):
+    """
+    Helper to load and parse JSON data.
+    Returns a dict on success, or None (with a flash message) on failure.
+    """
+    try:
+        json_data = get_past_json(filename)
+        return json.loads(json_data)
+    except json.JSONDecodeError as e:
+        flash(f"Error parsing JSON from {filename}: {e}", "danger")
+        return None
+
+
 @main_bp.route('/', methods=['GET'])
 def index():
     return redirect(url_for('auth.login'))
+
 
 @main_bp.route('/dashboard', methods=['GET', 'POST'])
 @login_required
@@ -52,6 +68,7 @@ def dashboard():
                                    plotA="caso1_plot.png", plotB="caso2_plot.png")
     return render_template('dashboard.html', data=None, files=files)
 
+
 @main_bp.route('/form', methods=['GET', 'POST'])
 @login_required
 def form():
@@ -76,10 +93,12 @@ def form():
                     db.session.delete(file_to_delete)
                     try:
                         db.session.commit()
-                        flash(f'File "{filename}" deleted successfully!', 'success')
+                        flash(
+                            f'File "{filename}" deleted successfully!', 'success')
                     except SQLAlchemyError:
                         db.session.rollback()
-                        flash("Database error occurred while deleting file.", "danger")
+                        flash(
+                            "Database error occurred while deleting file.", "danger")
                 else:
                     flash(f'File "{filename}" not found.', 'danger')
             return redirect(url_for('main.form'))
@@ -108,10 +127,12 @@ def form():
                     flash('Form successfully submitted!', 'success')
                 except SQLAlchemyError:
                     db.session.rollback()
-                    flash("Database error occurred while submitting the form.", "danger")
+                    flash(
+                        "Database error occurred while submitting the form.", "danger")
 
                 return redirect(url_for('main.form'))
     return render_template('form.html', data=data, files=files)
+
 
 @main_bp.route('/exchange', methods=['GET', 'POST'])
 @login_required
@@ -123,28 +144,71 @@ def exchange():
     deficit_sum = 0
     total = 0
     if request.method == 'POST':
+        if 'load' in request.form:
+            filename = request.form.get("past_select")
+            if filename:
+                data = load_past_json_data(filename)
+                print(data)
+            calculated_data1 = data["calculated_data1"]
+            calculated_data2 = data["calculated_data2"]
+            calculated_data3 = data["calculated_data3"]
+            surplus_sum = data["surplus_sum"]
+            deficit_sum = data["deficit_sum"]
+            total = data["total"]
+            data = data["data"]
+
+            return render_template('exchange.html', past_exchange=past_exchange, files=files, data=data,
+                                   surplus_sum=surplus_sum, deficit_sum=deficit_sum,
+                                   calculated_data1=calculated_data1, calculated_data2=calculated_data2,
+                                   calculated_data3=calculated_data3, total=total)
+        if 'delete' in request.form:
+            filename = request.form.get("past_select")
+            if filename:
+                file_to_delete = db.session.execute(
+                    select(PastExchange).filter(
+                        PastExchange.user_id == current_user.id,
+                        PastExchange.filename == filename
+                    )
+                ).scalar()
+                if file_to_delete:
+                    db.session.delete(file_to_delete)
+                    try:
+                        db.session.commit()
+                        flash(
+                            f'File "{filename}" deleted successfully!', 'success')
+                    except SQLAlchemyError:
+                        db.session.rollback()
+                        flash(
+                            "Database error occurred while deleting file.", "danger")
+                else:
+                    flash(f'File "{filename}" not found.', 'danger')
+            return redirect(url_for('main.exchange'))
+
         selected_files = request.form.getlist('selected_files')
         if selected_files:
-            data, surplus_sum, deficit_sum, total = calculate_exchange(selected_files)
-            calculated_data1, calculated_data2, calculated_data3 = split_json_by_deficit_surplus(selected_files)
-            print("Calc1")
-            print(calculated_data1)
-            print("Calc2")
-            print(calculated_data2)
-            print("Calc3")
-            print(calculated_data3)
+            data, surplus_sum, deficit_sum, total = calculate_exchange(
+                selected_files)
+            calculated_data1, calculated_data2, calculated_data3 = split_json_by_deficit_surplus(
+                selected_files)
             db_data = []
 
-            db_data.append(nameExchange(calculated_data1))
-            db_data.append(calculated_data2)
-            db_data.append(calculated_data3)
-            
-            if check_entry_existance(db_data[0], current_user, PastExchange):
+            db_data = {
+                "exchange_name": nameExchange(calculated_data1),
+                "calculated_data1": calculated_data1,
+                "calculated_data2": calculated_data2,
+                "calculated_data3": calculated_data3,
+                "data": data,
+                "surplus_sum": surplus_sum,
+                "deficit_sum": deficit_sum,
+                "total": total
+            }
+
+            if check_entry_existance(db_data["exchange_name"], current_user, PastExchange):
                 flash("Entry already exists", "danger")
             else:
                 entry = PastExchange(
-                    filename=db_data[0],
-                    json_data=json.dumps(db_data),
+                    filename=db_data["exchange_name"],
+                    json_data=json.dumps(db_data),  # Store as JSON string
                     user_id=current_user.id
                 )
                 db.session.add(entry)
@@ -156,10 +220,9 @@ def exchange():
                 flash("Database error occurred while submitting the form.", "danger")
         past_exchange = get_past_exchange()
         return render_template('exchange.html', past_exchange=past_exchange, files=files, data=data,
-                               surplus_sum=surplus_sum, deficit_sum=deficit_sum, 
+                               surplus_sum=surplus_sum, deficit_sum=deficit_sum,
                                calculated_data1=calculated_data1, calculated_data2=calculated_data2,
                                calculated_data3=calculated_data3, total=total)
-
 
     return render_template('exchange.html', past_exchange=past_exchange, files=files, data=None,
                            surplus_sum=0, deficit_sum=0, total=0)
@@ -172,6 +235,7 @@ def nameExchange(calculated_data):
         if (i < len(calculated_data) - 1):
             name = name + '-'
     return name
+
 
 def calculate_exchange(file_list):
     """
@@ -200,6 +264,7 @@ def calculate_exchange(file_list):
     total = round_floats(surplus_sum + deficit_sum)
     return round_floats(sf_data), round_floats(surplus_sum), round_floats(deficit_sum), total
 
+
 def split_json_by_deficit_surplus(file_list):
     """
     Separates JSON files into positive and negative D/S lists and calls the appropriate outflow.
@@ -214,10 +279,11 @@ def split_json_by_deficit_surplus(file_list):
     for filename in file_list:
         data = load_json_data(filename)
         if data and "D/S 1*" in data and isinstance(data["D/S 1*"], list) and data["D/S 1*"]:
-            #For each file, get the last value of D/S 1* to determine
-            #whether it is a surplus or deficit
+            # For each file, get the last value of D/S 1* to determine
+            # whether it is a surplus or deficit
             last_value = data["D/S 1*"][-1]
-            entry = {"Filename": data.get("Filename", filename), "Data": last_value}
+            entry = {"Filename": data.get(
+                "Filename", filename), "Data": last_value}
             if last_value > 0:
                 positive_entries.append(entry)
                 sum_positive_ds += last_value
@@ -235,12 +301,18 @@ def split_json_by_deficit_surplus(file_list):
     surplus = [positive_entries, sum_positive_ds, count_positive]
     deficit = [negative_entries, sum_negative_ds, count_negative]
 
-    if surplus[1] >= abs(deficit[1]): #Check the sum of surplus is bigger then deficit
-        calculated_data1, calculated_data2, calculated_data3 = outflowA(surplus, deficit)
+    # Check the sum of surplus is bigger then deficit
+    if surplus[1] >= abs(deficit[1]):
+        calculated_data1, calculated_data2, calculated_data3 = outflowA(
+            surplus, deficit)
     elif surplus[1] < abs(deficit[1]):
-        calculated_data1, calculated_data2, calculated_data3 = outflowB(surplus, deficit)
-    
+        calculated_data1, calculated_data2, calculated_data3 = outflowB(
+            surplus, deficit)
+    else:
+        return [], [], []  # fallback in case something unexpected happens
+
     return calculated_data1, calculated_data2, calculated_data3
+
 
 def outflowA(surplus, deficit):
     """
@@ -251,6 +323,7 @@ def outflowA(surplus, deficit):
     calculated_data2 = criteria_a2(surplus, deficit)
     calculated_data3 = criterio_a3(surplus, deficit, 0.7)
     return calculated_data1, calculated_data2, calculated_data3
+
 
 def criteria_a1(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
@@ -269,7 +342,7 @@ def criteria_a1(surplus, deficit):
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
                     )
                     try:
-                        alpha_value =  json_data["D/S 1*"][11] / sum_surplus 
+                        alpha_value = json_data["D/S 1*"][11] / sum_surplus
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
@@ -278,12 +351,13 @@ def criteria_a1(surplus, deficit):
                     entry["alpha_surplus"] = []
                     for i in range(12):
                         if json_data["D/S 1 j"][i] > 0:
-                            entry["alpha_surplus"].append(json_data["D/S 1 j"][i] * alpha_value)
+                            entry["alpha_surplus"].append(
+                                json_data["D/S 1 j"][i] * alpha_value)
                             edj_tot += json_data["D/S 1 j"][i] * alpha_value
                             k_a[i] = 1
                         else:
                             entry["alpha_surplus"].append(0)
-                    
+
                     calculated_data1.append(entry)
 
     if deficit_tmp[2] > 0:
@@ -295,7 +369,7 @@ def criteria_a1(surplus, deficit):
                     sum_deficit = sum(
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
                     )
-                    
+
                     try:
                         alpha_value = json_data["D/S 1*"][11] / deficit[1]
                     except (IndexError, ZeroDivisionError):
@@ -311,6 +385,7 @@ def criteria_a1(surplus, deficit):
     calculated_data1 = round_floats(calculated_data1)
 
     return calculated_data1
+
 
 def criteria_a2(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
@@ -328,7 +403,7 @@ def criteria_a2(surplus, deficit):
                     sum_deficit = sum(
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
                     )
-                    
+
                     try:
                         alpha_value = json_data["D/S 1*"][11] / sum_deficit
                     except (IndexError, ZeroDivisionError):
@@ -339,8 +414,10 @@ def criteria_a2(surplus, deficit):
                     entry["alpha_deficit"] = []
                     for i in range(12):
                         if json_data["D/S 1 j"][i] < 0:
-                            entry["alpha_deficit"].append(abs(json_data["D/S 1 j"][i] * alpha_value))
-                            adj_tot = abs(json_data["D/S 1 j"][i] * alpha_value)
+                            entry["alpha_deficit"].append(
+                                abs(json_data["D/S 1 j"][i] * alpha_value))
+                            adj_tot = abs(
+                                json_data["D/S 1 j"][i] * alpha_value)
                             k_b[i] = 1
                         else:
                             entry["alpha_deficit"].append(0)
@@ -357,7 +434,7 @@ def criteria_a2(surplus, deficit):
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
                     )
                     try:
-                        alpha_value =  json_data["D/S 1*"][11] / surplus[1]
+                        alpha_value = json_data["D/S 1*"][11] / surplus[1]
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
@@ -369,7 +446,8 @@ def criteria_a2(surplus, deficit):
                     calculated_data2.append(entry)
     calculated_data2 = round_floats(calculated_data2)
     return calculated_data2
-    
+
+
 def criterio_a3(surplus, deficit, lambda_value):
     calculated_data_3 = []
     calculated_data_31 = []
@@ -383,7 +461,7 @@ def criterio_a3(surplus, deficit, lambda_value):
     lambda_surplus = lambda_value
     lambda_deficit = 1 - lambda_value
 
-    #Criterio A1
+    # Criterio A1
     if surplus_tmp[2] > 0:
         for entry in surplus_tmp[0]:
             if entry.get("Filename"):
@@ -394,7 +472,7 @@ def criterio_a3(surplus, deficit, lambda_value):
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
                     )
                     try:
-                        alpha_value =  json_data["D/S 1*"][11] / sum_surplus 
+                        alpha_value = json_data["D/S 1*"][11] / sum_surplus
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
                     # Store computed alpha value and the monthly computed values in the dictionary
@@ -402,11 +480,13 @@ def criterio_a3(surplus, deficit, lambda_value):
                     entry["alpha_surplus"] = []
                     for i in range(12):
                         if json_data["D/S 1 j"][i] > 0:
-                            entry["alpha_surplus"].append(json_data["D/S 1 j"][i] * alpha_value * lambda_surplus)
+                            entry["alpha_surplus"].append(
+                                json_data["D/S 1 j"][i] * alpha_value * lambda_surplus)
                             k_a[i] = 1
                         else:
                             entry["alpha_surplus"].append(0)
                     calculated_data_31.append(entry)
+
     if deficit_tmp[2] > 0:
         for entry in deficit_tmp[0]:
             if entry.get("Filename"):
@@ -416,7 +496,7 @@ def criterio_a3(surplus, deficit, lambda_value):
                     sum_deficit = sum(
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
                     )
-                    
+
                     try:
                         alpha_value = json_data["D/S 1*"][11] / deficit[1]
                     except (IndexError, ZeroDivisionError):
@@ -429,7 +509,7 @@ def criterio_a3(surplus, deficit, lambda_value):
                     ]
                     calculated_data_31.append(entry)
 
-    #Criterio A2
+    # Criterio A2
     deficit_tmp = deficit
     surplus_tmp = surplus
     if deficit_tmp[2] > 0:
@@ -441,7 +521,7 @@ def criterio_a3(surplus, deficit, lambda_value):
                     sum_deficit = sum(
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
                     )
-                    
+
                     try:
                         alpha_value = json_data["D/S 1*"][11] / sum_deficit
                     except (IndexError, ZeroDivisionError):
@@ -452,8 +532,10 @@ def criterio_a3(surplus, deficit, lambda_value):
                     entry["alpha_deficit"] = []
                     for i in range(12):
                         if json_data["D/S 1 j"][i] < 0:
-                            entry["alpha_deficit"].append(abs(json_data["D/S 1 j"][i] * alpha_value * lambda_deficit))
-                            adj_tot = abs(json_data["D/S 1 j"][i] * alpha_value * lambda_deficit)
+                            entry["alpha_deficit"].append(
+                                abs(json_data["D/S 1 j"][i] * alpha_value * lambda_deficit))
+                            adj_tot = abs(
+                                json_data["D/S 1 j"][i] * alpha_value * lambda_deficit)
                             k_b[i] = 1
                         else:
                             entry["alpha_deficit"].append(0)
@@ -470,7 +552,7 @@ def criterio_a3(surplus, deficit, lambda_value):
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
                     )
                     try:
-                        alpha_value =  json_data["D/S 1*"][11] / surplus[1]
+                        alpha_value = json_data["D/S 1*"][11] / surplus[1]
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
@@ -486,7 +568,8 @@ def criterio_a3(surplus, deficit, lambda_value):
     # First, copy all entries from criterio_a3_1
     for entry in calculated_data_31:
         place = entry['Filename']
-        aggregated_data[place] = copy.deepcopy(entry)  # Keep the original structure
+        aggregated_data[place] = copy.deepcopy(
+            entry)  # Keep the original structure
 
     # Now, update or merge entries from criterio_a3_2
     for entry in calculated_data_32:
@@ -497,7 +580,8 @@ def criterio_a3(surplus, deficit, lambda_value):
             if 'alpha_deficit' in entry:
                 if 'alpha_deficit' in aggregated_data[place]:
                     aggregated_data[place]['alpha_deficit'] = [
-                        aggregated_data[place]['alpha_deficit'][i] + entry['alpha_deficit'][i]
+                        aggregated_data[place]['alpha_deficit'][i] +
+                        entry['alpha_deficit'][i]
                         for i in range(12)
                     ]
                 else:
@@ -507,7 +591,8 @@ def criterio_a3(surplus, deficit, lambda_value):
             if 'alpha_surplus' in entry:
                 if 'alpha_surplus' in aggregated_data[place]:
                     aggregated_data[place]['alpha_surplus'] = [
-                        aggregated_data[place]['alpha_surplus'][i] + entry['alpha_surplus'][i]
+                        aggregated_data[place]['alpha_surplus'][i] +
+                        entry['alpha_surplus'][i]
                         for i in range(12)
                     ]
                 else:
@@ -518,6 +603,56 @@ def criterio_a3(surplus, deficit, lambda_value):
 
     # Convert back to a list to match the original format
     calculated_data_3 = list(aggregated_data.values())
+
+    ########## Adding the "alpha_surplus" to "E tra j" and "alpha_deficit" to "A tra" ##########
+    for entry in calculated_data_3:
+        filename = entry.get("Filename")
+        if not filename:
+            continue
+        json_file = db.session.execute(
+            select(JsonFile).filter_by(filename=filename)).scalar_one_or_none()
+        if not json_file:
+            continue
+
+        try:
+            json_data = json.loads(json_file.json_data)
+        except json.JSONDecodeError:
+            continue
+
+        if "alpha_surplus" in entry:
+            json_data["E tra j"] = entry["alpha_surplus"]
+
+        if "alpha_deficit" in entry:
+            json_data["A tra"] = entry["alpha_deficit"]
+
+        # Save the updated JSON back into the database under a new filename
+
+        new_filename = filename + " - Criterio 3"
+
+        # Check if file with new filename exists
+        existing_file = db.session.execute(
+            select(JsonFile).filter_by(filename=new_filename)
+        ).scalar_one_or_none()
+
+        if existing_file:
+            # Overwrite existing entry
+            existing_file.json_data = json.dumps(process_data_post(json_data))
+            existing_file.user_id = current_user.id
+        else:
+            # Create a new one
+            new_json_file = JsonFile(
+                filename=new_filename,
+                json_data=json.dumps(json_data),
+                user_id=current_user.id
+            )
+            db.session.add(new_json_file)
+
+    try:
+        db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"Error updating json_data with alpha values: {e}")
+
     calculated_data_3 = round_floats(calculated_data_3)
 
     print("Criterio A3.1")
@@ -528,10 +663,10 @@ def criterio_a3(surplus, deficit, lambda_value):
     print(calculated_data_3)
     return calculated_data_3
 
+
 def outflowB(surplus, deficit):
-    """
-    Processes outflow scenario B.
-    """
     print("Outflow B")
-    #calculated_data = criteria_a1(surplus, deficit)
-    #return calculated_data
+    calculated_data1 = []
+    calculated_data2 = []
+    calculated_data3 = []
+    return calculated_data1, calculated_data2, calculated_data3
