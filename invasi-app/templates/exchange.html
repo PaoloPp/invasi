@@ -71,23 +71,37 @@
       <strong>Selected:</strong> <em>None</em>
     </div>
     <form id="damns_select" method="POST">
-      <div class="dropdown" id="dropdown-container">
-        <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
-          aria-expanded="false">
-          Select Options
-        </button>
-        <button type="submit" class="btn btn-primary">Submit</button>
-        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdown-menu">
-          {% for file in files %}
-          <li>
-            <label class="dropdown-item">
-              <input type="checkbox" name="selected_files" value="{{ file }}" class="option-checkbox"> {{ file }}
-            </label>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </form>
+  <div class="d-flex align-items-center gap-2"> <!-- Bootstrap flex container with spacing -->
+    
+    <!-- Dropdown button and menu -->
+    <div class="dropdown">
+      <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
+        aria-expanded="false">
+        Select Options
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdown-menu">
+        {% for file in files %}
+        <li>
+          <label class="dropdown-item">
+            <input type="checkbox" name="selected_files" value="{{ file }}" class="option-checkbox"> {{ file }}
+          </label>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Lambda label -->
+    <span>Lambda: </span>
+
+    <!-- Lambda input -->
+    <input type="text" inputmode="decimal" id="lambda" class="numeric-input" name="lambda" class="form-control" placeholder="Lambda" required style="width: 120px;">
+
+    <!-- Submit button -->
+    <button type="submit" class="btn btn-primary">Submit</button>
+    
+  </div>
+</form>
+
     <br>
     <form id="past_select" method="POST">
       <select class="form-select" id="past_select" name="past_select" required>
@@ -116,9 +130,9 @@
         </tr>
         <tr>
           <th>S/D<br>(Mm³)</th>
-          <th>S<br>(Mm³)</th>
+          <th>Sf<br>(Mm³)</th>
           <th>S/D<br>(Mm³)</th>
-          <th>S<br>(Mm³)</th>
+          <th>Sf<br>(Mm³)</th>
         </tr>
       </thead>
       <tbody>
@@ -194,11 +208,15 @@
             <tr>
               <th rowspan="2">Invaso</th>
               <th rowspan="2">Alpha Surplus</th>
-              <th colspan="12">Trasferimenti mensili</th>
+              <th colspan="12">Trasferimenti mensili (Mm³)</th>
             </tr>
             <tr>
-              {% for i in range(1, 13) %}
-              <th>Month {{ i }}</th>
+              {% set months = [
+              "October", "November", "December", "January", "February", "March",
+              "April", "May", "June", "July", "August", "September"
+              ] %}
+              {% for i in range(0, 12) %}
+              <th style="font-size: small;">{{ months[i] }}</th>
               {% endfor %}
             </tr>
           </thead>
@@ -222,11 +240,15 @@
             <tr>
               <th rowspan="2">Invaso</th>
               <th rowspan="2">Alpha Deficit</th>
-              <th colspan="12">Computed Monthly Values</th>
+              <th colspan="12">Trasferimenti mensili (Mm³)</th>
             </tr>
             <tr>
-              {% for i in range(1, 13) %}
-              <th>Month {{ i }}</th>
+              {% set months = [
+              "October", "November", "December", "January", "February", "March",
+              "April", "May", "June", "July", "August", "September"
+              ] %}
+              {% for i in range(0, 12) %}
+              <th style="font-size: small;">{{ months[i] }}</th>
               {% endfor %}
             </tr>
           </thead>
@@ -253,11 +275,15 @@
             <tr>
               <th rowspan="2">Invaso</th>
               <th rowspan="2">Alpha Surplus</th>
-              <th colspan="12">Trasferimenti mensili</th>
+              <th colspan="12">Trasferimenti mensili (Mm³)</th>
             </tr>
             <tr>
-              {% for i in range(1, 13) %}
-              <th>Month {{ i }}</th>
+              {% set months = [
+              "October", "November", "December", "January", "February", "March",
+              "April", "May", "June", "July", "August", "September"
+              ] %}
+              {% for i in range(0, 12) %}
+              <th style="font-size: small;">{{ months[i] }}</th>
               {% endfor %}
             </tr>
           </thead>
@@ -284,8 +310,12 @@
               <th colspan="12">Computed Monthly Values</th>
             </tr>
             <tr>
-              {% for i in range(1, 13) %}
-              <th>Month {{ i }}</th>
+              {% set months = [
+              "October", "November", "December", "January", "February", "March",
+              "April", "May", "June", "July", "August", "September"
+              ] %}
+              {% for i in range(0, 12) %}
+              <th style="font-size: small;">{{ months[i] }}</th>
               {% endfor %}
             </tr>
           </thead>
@@ -312,11 +342,15 @@
             <tr>
               <th rowspan="2">Invaso</th>
               <th rowspan="2">Alpha Surplus</th>
-              <th colspan="12">Trasferimenti mensili</th>
+              <th colspan="12">Trasferimenti mensili (Mm³)</th>
             </tr>
             <tr>
-              {% for i in range(1, 13) %}
-              <th>Month {{ i }}</th>
+              {% set months = [
+              "October", "November", "December", "January", "February", "March",
+              "April", "May", "June", "July", "August", "September"
+              ] %}
+              {% for i in range(0, 12) %}
+              <th style="font-size: small;">{{ months[i] }}</th>
               {% endfor %}
             </tr>
           </thead>
@@ -343,8 +377,12 @@
               <th colspan="12">Computed Monthly Values</th>
             </tr>
             <tr>
-              {% for i in range(1, 13) %}
-              <th>Month {{ i }}</th>
+              {% set months = [
+              "October", "November", "December", "January", "February", "March",
+              "April", "May", "June", "July", "August", "September"
+              ] %}
+              {% for i in range(0, 12) %}
+              <th style="font-size: small;">{{ months[i] }}</th>
               {% endfor %}
             </tr>
           </thead>
@@ -421,6 +459,26 @@
       }
     });
   </script>
+
+  <script>
+        // Select all inputs with the 'numeric-input' class
+        const numericInputs = document.querySelectorAll('.numeric-input');
+
+        numericInputs.forEach(input => {
+            // Event listener for each input in the collection
+            input.addEventListener('input', function () {
+                this.value = this.value.replace(/,/g, '.');  // Replace commas with dots on input
+            });
+
+            // Additional listener to handle pasted text with commas
+            input.addEventListener('paste', function (event) {
+                event.preventDefault();  // Prevent default paste
+                const pastedText = event.clipboardData.getData('text');
+                const formattedText = pastedText.replace(/,/g, '.');
+                document.execCommand('insertText', false, formattedText);  // Insert formatted text
+            });
+        });
+    </script>
 </body>
 
 </html>

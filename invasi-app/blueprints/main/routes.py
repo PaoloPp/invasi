@@ -185,11 +185,12 @@ def exchange():
             return redirect(url_for('main.exchange'))
 
         selected_files = request.form.getlist('selected_files')
+        lambda_value = float(request.form.get('lambda'))
         if selected_files:
             data, surplus_sum, deficit_sum, total = calculate_exchange(
                 selected_files)
             calculated_data1, calculated_data2, calculated_data3 = split_json_by_deficit_surplus(
-                selected_files)
+                selected_files, lambda_value)
             db_data = []
 
             db_data = {
@@ -265,7 +266,7 @@ def calculate_exchange(file_list):
     return round_floats(sf_data), round_floats(surplus_sum), round_floats(deficit_sum), total
 
 
-def split_json_by_deficit_surplus(file_list):
+def split_json_by_deficit_surplus(file_list, lambda_value):
     """
     Separates JSON files into positive and negative D/S lists and calls the appropriate outflow.
     """
@@ -304,24 +305,24 @@ def split_json_by_deficit_surplus(file_list):
     # Check the sum of surplus is bigger then deficit
     if surplus[1] >= abs(deficit[1]):
         calculated_data1, calculated_data2, calculated_data3 = outflowA(
-            surplus, deficit)
+            surplus, deficit, lambda_value)
     elif surplus[1] < abs(deficit[1]):
         calculated_data1, calculated_data2, calculated_data3 = outflowB(
-            surplus, deficit)
+            surplus, deficit, lambda_value)
     else:
         return [], [], []  # fallback in case something unexpected happens
 
     return calculated_data1, calculated_data2, calculated_data3
 
 
-def outflowA(surplus, deficit):
+def outflowA(surplus, deficit, lambda_value):
     """
     Processes outflow scenario A.
     """
 
     calculated_data1 = criteria_a1(surplus, deficit)
     calculated_data2 = criteria_a2(surplus, deficit)
-    calculated_data3 = criterio_a3(surplus, deficit, 0.7)
+    calculated_data3 = criterio_a3(surplus, deficit, lambda_value)
     return calculated_data1, calculated_data2, calculated_data3
 
 
