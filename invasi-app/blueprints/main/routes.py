@@ -189,7 +189,7 @@ def exchange():
         if selected_files:
             data, surplus_sum, deficit_sum, total = calculate_exchange(
                 selected_files)
-            calculated_data1, calculated_data2, calculated_data3 = split_json_by_deficit_surplus(
+            calculated_data1, calculated_data2, calculated_data3, comparison = split_json_by_deficit_surplus(
                 selected_files, lambda_value)
             db_data = []
 
@@ -223,7 +223,7 @@ def exchange():
         return render_template('exchange.html', past_exchange=past_exchange, files=files, data=data,
                                surplus_sum=surplus_sum, deficit_sum=deficit_sum,
                                calculated_data1=calculated_data1, calculated_data2=calculated_data2,
-                               calculated_data3=calculated_data3, total=total)
+                               calculated_data3=calculated_data3, comparison=comparison, total=total)
 
     return render_template('exchange.html', past_exchange=past_exchange, files=files, data=None,
                            surplus_sum=0, deficit_sum=0, total=0)
@@ -304,15 +304,15 @@ def split_json_by_deficit_surplus(file_list, lambda_value):
 
     # Check the sum of surplus is bigger then deficit
     if surplus[1] >= abs(deficit[1]):
-        calculated_data1, calculated_data2, calculated_data3 = outflowA(
+        calculated_data1, calculated_data2, calculated_data3, comparison = outflowA(
             surplus, deficit, lambda_value)
     elif surplus[1] < abs(deficit[1]):
-        calculated_data1, calculated_data2, calculated_data3 = outflowB(
+        calculated_data1, calculated_data2, calculated_data3, comparison = outflowB(
             surplus, deficit, lambda_value)
     else:
         return [], [], []  # fallback in case something unexpected happens
 
-    return calculated_data1, calculated_data2, calculated_data3
+    return calculated_data1, calculated_data2, calculated_data3, comparison
 
 
 def outflowA(surplus, deficit, lambda_value):
@@ -322,8 +322,8 @@ def outflowA(surplus, deficit, lambda_value):
 
     calculated_data1 = criteria_a1(surplus, deficit)
     calculated_data2 = criteria_a2(surplus, deficit)
-    calculated_data3 = criterio_a3(surplus, deficit, lambda_value)
-    return calculated_data1, calculated_data2, calculated_data3
+    calculated_data3, comparison = criterio_a3(surplus, deficit, lambda_value)
+    return calculated_data1, calculated_data2, calculated_data3, comparison
 
 
 def criteria_a1(surplus, deficit):
@@ -605,9 +605,14 @@ def criterio_a3(surplus, deficit, lambda_value):
     # Convert back to a list to match the original format
     calculated_data_3 = list(aggregated_data.values())
 
+    # Save past and new surplus/deficit values
+    comparison = []
+
     ########## Adding the "alpha_surplus" to "E tra j" and "alpha_deficit" to "A tra" ##########
     for entry in calculated_data_3:
+
         filename = entry.get("Filename")
+
         if not filename:
             continue
         json_file = db.session.execute(
@@ -635,9 +640,17 @@ def criterio_a3(surplus, deficit, lambda_value):
             select(JsonFile).filter_by(filename=new_filename)
         ).scalar_one_or_none()
 
+        comparison_entry = {"Filename": filename, "D/S 1*": round_floats(json_data.get("D/S 1*")[11]), "D/S 2*": round_floats(json_data.get("D/S 2*")[11]),
+                                                  "D/S 1* post": 0,             "D/S 2* post": 0}
+        json_data = process_data_post(json_data)
+
+        comparison_entry["D/S 1* post"] = round_floats(json_data.get("D/S 1*")[11])
+        comparison_entry["D/S 2* post"] = round_floats(json_data.get("D/S 2*")[11])
+        comparison.append(comparison_entry)
+
         if existing_file:
             # Overwrite existing entry
-            existing_file.json_data = json.dumps(process_data_post(json_data))
+            existing_file.json_data = json.dumps(json_data)
             existing_file.user_id = current_user.id
         else:
             # Create a new one
@@ -662,7 +675,7 @@ def criterio_a3(surplus, deficit, lambda_value):
     print(round_floats(calculated_data_32))
     print("Summed Values")
     print(calculated_data_3)
-    return calculated_data_3
+    return calculated_data_3, comparison
 
 
 def outflowB(surplus, deficit):
@@ -670,4 +683,5 @@ def outflowB(surplus, deficit):
     calculated_data1 = []
     calculated_data2 = []
     calculated_data3 = []
-    return calculated_data1, calculated_data2, calculated_data3
+    comparison = []
+    return calculated_data1, calculated_data2, calculated_data3, comparison
