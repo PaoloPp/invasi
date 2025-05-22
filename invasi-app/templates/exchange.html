@@ -77,7 +77,7 @@
     <div class="dropdown">
       <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
         aria-expanded="false">
-        Select Options
+        Seleziona invasi
       </button>
       <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdown-menu">
         {% for file in files %}
@@ -97,7 +97,7 @@
     <input type="text" inputmode="decimal" id="lambda" class="numeric-input" name="lambda" class="form-control" placeholder="Lambda" required style="width: 120px;">
 
     <!-- Submit button -->
-    <button type="submit" class="btn btn-primary">Submit</button>
+    <button type="submit" class="btn btn-primary">Inizia elaborazione</button>
     
   </div>
 </form>
@@ -105,15 +105,15 @@
     <br>
     <form id="past_select" method="POST">
       <select class="form-select" id="past_select" name="past_select" required>
-        <option value="">-- Select a file --</option>
+        <option value="">-- Seleziona un bilanciamento --</option>
         {% for file in past_exchange %}
         <option value="{{ file }}">{{ file }}</option>
         {% endfor %}
       </select>
       <div class="text-center">
         <br>
-        <button type="submit" name="load" value="load" class="btn btn-primary">Submit</button>
-        <button type="submit" name="delete" value="delete" class="btn btn-danger">Delete</button>
+        <button type="submit" name="load" value="load" class="btn btn-primary">Invia</button>
+        <button type="submit" name="delete" value="delete" class="btn btn-danger">Elimina</button>
       </div>
     </form>
   </div>

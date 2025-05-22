@@ -152,6 +152,7 @@ def exchange():
             calculated_data1 = data["calculated_data1"]
             calculated_data2 = data["calculated_data2"]
             calculated_data3 = data["calculated_data3"]
+            comparison = data["comparison"]
             surplus_sum = data["surplus_sum"]
             deficit_sum = data["deficit_sum"]
             total = data["total"]
@@ -160,7 +161,7 @@ def exchange():
             return render_template('exchange.html', past_exchange=past_exchange, files=files, data=data,
                                    surplus_sum=surplus_sum, deficit_sum=deficit_sum,
                                    calculated_data1=calculated_data1, calculated_data2=calculated_data2,
-                                   calculated_data3=calculated_data3, total=total)
+                                   calculated_data3=calculated_data3, comparison=comparison, total=total)
         if 'delete' in request.form:
             filename = request.form.get("past_select")
             if filename:
@@ -198,6 +199,7 @@ def exchange():
                 "calculated_data1": calculated_data1,
                 "calculated_data2": calculated_data2,
                 "calculated_data3": calculated_data3,
+                "comparison": comparison,
                 "data": data,
                 "surplus_sum": surplus_sum,
                 "deficit_sum": deficit_sum,
@@ -206,6 +208,16 @@ def exchange():
 
             if check_entry_existance(db_data["exchange_name"], current_user, PastExchange):
                 flash("Entry already exists", "danger")
+                #Overwrite the existing entry
+                entry = db.session.execute(
+                    select(PastExchange).filter(
+                        PastExchange.user_id == current_user.id,
+                        PastExchange.filename == db_data["exchange_name"]
+                    )
+                ).scalar_one_or_none()
+                if entry:
+                    entry.json_data = json.dumps(db_data)
+                    entry.user_id = current_user.id
             else:
                 entry = PastExchange(
                     filename=db_data["exchange_name"],
@@ -669,12 +681,12 @@ def criterio_a3(surplus, deficit, lambda_value):
 
     calculated_data_3 = round_floats(calculated_data_3)
 
-    print("Criterio A3.1")
-    print(round_floats(calculated_data_31))
-    print("Criterio A3.2")
-    print(round_floats(calculated_data_32))
-    print("Summed Values")
-    print(calculated_data_3)
+    #print("Criterio A3.1")
+    #print(round_floats(calculated_data_31))
+    #print("Criterio A3.2")
+    #print(round_floats(calculated_data_32))
+    #print("Summed Values")
+    #print(calculated_data_3)
     return calculated_data_3, comparison
 
 
