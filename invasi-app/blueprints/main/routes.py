@@ -25,6 +25,17 @@ def load_json_data(filename):
         flash(f"Error parsing JSON from {filename}: {e}", "danger")
         return None
 
+def load_json_data_traverse(filename):
+    """
+    Helper to load and parse JSON data.
+    Returns a dict on success, or None (with a flash message) on failure.
+    """
+    try:
+        json_data = get_json_traverse(filename)
+        return json.loads(json_data)
+    except json.JSONDecodeError as e:
+        flash(f"Error parsing JSON from {filename}: {e}", "danger")
+        return None
 
 def load_past_json_data(filename):
     """
@@ -134,10 +145,78 @@ def form():
     return render_template('form.html', data=data, files=files)
 
 
+@main_bp.route('/form_traverse', methods=['GET', 'POST'])
+@login_required
+def manage_traverse():
+    files = get_user_files_traverse()
+    data = {}
+    if request.method == 'POST':
+        if 'load' in request.form:
+            filename = request.form.get("data_select")
+            if filename:
+                data = load_json_data_traverse(filename)
+                return render_template('form_traverse.html', data=data, files=files)
+            
+        elif 'delete' in request.form:
+            filename = request.form.get("data_select")
+            if filename:
+                file_to_delete = db.session.execute(
+                    select(JsonFileTraverse).filter(
+                        JsonFileTraverse.user_id == current_user.id,
+                        JsonFileTraverse.filename == filename
+                    )
+                ).scalar()
+                if file_to_delete:
+                    db.session.delete(file_to_delete)
+                    try:
+                        db.session.commit()
+                        flash(
+                            f'File "{filename}" deleted successfully!', 'success')
+                    except SQLAlchemyError:
+                        db.session.rollback()
+                        flash(
+                            "Database error occurred while deleting file.", "danger")
+                else:
+                    flash(f'File "{filename}" not found.', 'danger')
+            return redirect(url_for('main.manage_traverse'))
+        else:
+            if current_user.is_authenticated:
+                json_filename = request.form.get('filename')
+                data = process_data_traverse(request)
+
+                existing_file = db.session.execute(
+                    select(JsonFileTraverse).filter(
+                        JsonFileTraverse.user_id == current_user.id,
+                        JsonFileTraverse.filename == json_filename
+                    )
+                ).scalar_one_or_none()
+                if existing_file:
+                    existing_file.json_data = json.dumps(data)
+                else:
+                    json_file = JsonFileTraverse(
+                        filename=json_filename,
+                        json_data=json.dumps(data),
+                        user_id=current_user.id
+                    )
+                    db.session.add(json_file)
+                try:
+                    db.session.commit()
+                    flash('Form successfully submitted!', 'success')
+                except SQLAlchemyError:
+                    db.session.rollback()
+                    flash(
+                        "Database error occurred while submitting the form.", "danger")
+
+                return redirect(url_for('main.manage_traverse'))
+        
+    return render_template('form_traverse.html', data=data, files=files)
+
+
 @main_bp.route('/exchange', methods=['GET', 'POST'])
 @login_required
 def exchange():
     files = get_user_files()
+    traverse_files = get_user_files_traverse()
     past_exchange = get_past_exchange()
     data = {}
     surplus_sum = 0
@@ -158,7 +237,8 @@ def exchange():
             total = data["total"]
             data = data["data"]
 
-            return render_template('exchange.html', filename=filename, past_exchange=past_exchange, files=files, data=data,
+            return render_template('exchange.html', filename=filename, data=data,
+                                   past_exchange=past_exchange, files=files, traverse_files=traverse_files,
                                    surplus_sum=surplus_sum, deficit_sum=deficit_sum,
                                    calculated_data1=calculated_data1, calculated_data2=calculated_data2,
                                    calculated_data3=calculated_data3, comparison=comparison, total=total)
@@ -235,13 +315,14 @@ def exchange():
                 flash("Database error occurred while submitting the form.", "danger")
         past_exchange = get_past_exchange()
         return render_template('exchange.html', 
-                                filename=exchange_name, past_exchange=past_exchange, 
-                                files=files, data=data,
+                                filename=exchange_name, data=data,
+                                past_exchange=past_exchange, files=files, traverse_files=traverse_files,
                                 surplus_sum=surplus_sum, deficit_sum=deficit_sum,
                                 calculated_data1=calculated_data1, calculated_data2=calculated_data2,
                                 calculated_data3=calculated_data3, comparison=comparison, total=total)
 
-    return render_template('exchange.html', past_exchange=past_exchange, files=files, data=None,
+    return render_template('exchange.html', data=None,
+                           past_exchange=past_exchange, files=files, traverse_files=traverse_files,
                            surplus_sum=0, deficit_sum=0, total=0)
 
 
@@ -694,8 +775,18 @@ def criterio_a3(surplus, deficit, lambda_value):
     return calculated_data_3, comparison
 
 
-def outflowB(surplus, deficit):
+def outflowB(surplus, deficit, traverse):
     print("Outflow B")
+
+    Datot = abs(deficit[1]) - surplus[1] #Deficit managed by the surplus
+    Dbtot = abs(deficit[1]) - Datot #Defict managed by the traverse
+
+    
+
+
+
+
+
     calculated_data1 = []
     calculated_data2 = []
     calculated_data3 = []

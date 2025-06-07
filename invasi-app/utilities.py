@@ -1,6 +1,6 @@
 from itertools import cycle
 from extensions import db
-from models import JsonFile, User, PastExchange
+from models import JsonFile, User, PastExchange, JsonFileTraverse
 from flask_login import current_user
 from sqlalchemy import select
 
@@ -43,6 +43,44 @@ def round_floats(obj):
     else:
         return obj
 
+
+def process_data_traverse(request):
+    data = {}
+    data["Filename"] = request.form.get("filename")
+    data["Mese di partenza"] = request.form.get('starting_month', 'October')  # Default or fallback if needed
+
+    # Initialize lists
+    data["Pj"] = []
+    data["Pj(eco)"] = []
+    data["Pij"] = []
+
+    # Loop through 12 months
+    for i in range(12):
+        pj_value = request.form.get(f"Pj-{i}", "0").replace(",", ".")
+        pjeco_value = request.form.get(f"Pjeco-{i}", "0").replace(",", ".")
+        pij_value = request.form.get(f"Pij-{i}", "0").replace(",", ".")
+
+        try:
+            data["Pj"].append(float(pj_value))
+        except ValueError:
+            data["Pj"].append(0.0)
+
+        try:
+            data["Pj(eco)"].append(float(pjeco_value))
+        except ValueError:
+            data["Pj(eco)"].append(0.0)
+
+        try:
+            data["Pij"].append(float(pij_value))
+        except ValueError:
+            data["Pij"].append(0.0)
+
+    # Optional debug print
+    print("Pj:", data["Pj"])
+    print("Pj(eco):", data["Pj(eco)"])
+    print("Pij:", data["Pij"])
+
+    return data
 
 def process_data(request):
     vol = ["S", "Winv tot", "Winv aut", "Wo", "A", "A'", "P ev",
@@ -251,6 +289,8 @@ def process_data_post(data):
 def get_user_files():
     return db.session.execute(db.select(JsonFile.filename).filter_by(user_id=current_user.id)).scalars().all()
 
+def get_user_files_traverse():
+    return db.session.execute(db.select(JsonFileTraverse.filename).filter_by(user_id=current_user.id)).scalars().all()
 
 def get_past_exchange():
     return db.session.execute(db.select(PastExchange.filename).filter_by(user_id=current_user.id)).scalars().all()
@@ -259,9 +299,12 @@ def get_past_exchange():
 def get_json(filename_selected):
     return db.session.execute(db.select(JsonFile.json_data).filter_by(filename=filename_selected)).scalar()
 
+def get_json_traverse(filename_selected):
+    return db.session.execute(db.select(JsonFileTraverse.json_data).filter_by(filename=filename_selected)).scalar()
 
 def get_past_json(filename_selected):
     return db.session.execute(db.select(PastExchange.json_data).filter_by(filename=filename_selected)).scalar()
+
 # def plot_values(_label, _data, _name):
 #    print("Plotting: " + _name)
 #    ldata = _data.copy()

@@ -8,7 +8,7 @@ from extensions import db, login_manager
 from flask import Flask
 from flask_mail import Mail
 from flask_migrate import Migrate
-from models import User, PastExchange, JsonFile
+from models import User, PastExchange, JsonFile, JsonFileTraverse
 from blueprints.auth.routes import auth_bp
 from blueprints.admin.routes import admin_bp
 from blueprints.main.routes import main_bp
@@ -38,6 +38,9 @@ def create_app(config_class=DevelopmentConfig):
     app.secret_key = 'supersecretkey'
 
     db.init_app(app)
+    with app.app_context():
+        db.create_all()
+        # Create the database tables if they don't exist
     login_manager.init_app(app)
 
     app.register_blueprint(auth_bp, url_prefix='/auth')

@@ -97,15 +97,18 @@
   {% include "navbar.html" %}
 
   <div class="container mt-5">
-    <h1>Multiple Selection Menu</h1>
+    <h1>Modin Exchange</h1>
     <!-- Selected Values Display -->
     <div id="selected-values" class="selected-values">
-      <strong>Selected:</strong> <em>None</em>
+      <strong>Invasi selezionati:</strong> <em>None</em>
+    </div>
+    <div id="selected-traverse" class="selected-values">
+      <strong>Traverse selezionate:</strong> <em>None</em>
     </div>
     <form id="damns_select" method="POST">
       <div class="d-flex align-items-center gap-2"> <!-- Bootstrap flex container with spacing -->
 
-        <!-- Dropdown button and menu -->
+        <!-- Selected files display -->
         <div class="dropdown">
           <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton"
             data-bs-toggle="dropdown" aria-expanded="false">
@@ -116,6 +119,24 @@
             <li>
               <label class="dropdown-item">
                 <input type="checkbox" name="selected_files" value="{{ file }}" class="option-checkbox"> {{ file }}
+              </label>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <!-- Traverse Dropdown -->
+        <div class="dropdown" id="dropdown-container-traverse">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonTraverse"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            Seleziona traverse
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonTraverse" id="dropdown-menu-traverse">
+            {% for file in traverse_files %}
+            <li>
+              <label class="dropdown-item">
+                <input type="checkbox" name="selected_traverse" value="{{ file }}" class="option-checkbox-traverse"> {{
+                file }}
               </label>
             </li>
             {% endfor %}
@@ -473,57 +494,57 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-      // Get references to elements
-      const checkboxes = document.querySelectorAll('.option-checkbox');
-      const selectedValuesContainer = document.getElementById('selected-values');
-      const dropdownMenu = document.getElementById('dropdown-menu');
-      const dropdownButton = document.getElementById('dropdownMenuButton');
-      const dropdownContainer = document.getElementById('dropdown-container');
+      // Invasi Dropdown Handling
+      const invasiCheckboxes = document.querySelectorAll('.option-checkbox');
+      const selectedInvasiContainer = document.getElementById('selected-values');
 
-      // Handle selecting or deselecting options
-      checkboxes.forEach(checkbox => {
+      invasiCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', () => {
-          const selectedOptions = Array.from(checkboxes)
+          const selected = Array.from(invasiCheckboxes)
             .filter(cb => cb.checked)
             .map(cb => cb.value);
 
-          // Clear previous selections
-          selectedValuesContainer.innerHTML = `<strong>Selected:</strong> `;
+          selectedInvasiContainer.innerHTML = `<strong>Invasi selezionati:</strong> `;
 
-          if (selectedOptions.length === 0) {
-            selectedValuesContainer.innerHTML += `<em>None</em>`;
+          if (selected.length === 0) {
+            selectedInvasiContainer.innerHTML += `<em>None</em>`;
           } else {
-            selectedOptions.forEach(value => {
+            selected.forEach(value => {
               const span = document.createElement('span');
               span.textContent = value;
-              selectedValuesContainer.appendChild(span);
+              selectedInvasiContainer.appendChild(span);
             });
           }
         });
       });
 
-      // Function to close the dropdown
-      function closeDropdown() {
-        const dropdown = new bootstrap.Dropdown(dropdownButton);
-        dropdown.hide();
-      }
+      // Traverse Dropdown Handling
+      const traverseCheckboxes = document.querySelectorAll('.option-checkbox-traverse');
+      const selectedTraverseContainer = document.getElementById('selected-traverse');
 
-      // Function to open the dropdown
-      function openDropdown() {
-        const dropdown = new bootstrap.Dropdown(dropdownButton);
-        dropdown.show();
-      }
+      traverseCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+          const selected = Array.from(traverseCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
 
-      // Detect click outside to close the dropdown
-      document.addEventListener('click', function (event) {
-        if (!dropdownContainer.contains(event.target)) {
-          closeDropdown();
-        } else {
-          openDropdown();
-        }
+          selectedTraverseContainer.innerHTML = `<strong>Traverse selezionate:</strong> `;
+
+          if (selected.length === 0) {
+            selectedTraverseContainer.innerHTML += `<em>None</em>`;
+          } else {
+            selected.forEach(value => {
+              const span = document.createElement('span');
+              span.textContent = value;
+              selectedTraverseContainer.appendChild(span);
+            });
+          }
+        });
       });
     </script>
+
 
     <script>
       // Select all inputs with the 'numeric-input' class

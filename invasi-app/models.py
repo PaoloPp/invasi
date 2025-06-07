@@ -18,6 +18,15 @@ class JsonFile(UserMixin, db.Model):
         String(120), nullable=True, unique=True)
     json_data: Mapped[str] = mapped_column(Text, nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
+    
+
+class JsonFileTraverse(UserMixin, db.Model):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    filename: Mapped[str] = mapped_column(
+        String(120), nullable=True, unique=True)
+    json_data: Mapped[str] = mapped_column(Text, nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
+
 
 class PastExchange(UserMixin, db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
