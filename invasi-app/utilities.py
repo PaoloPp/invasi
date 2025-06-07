@@ -137,8 +137,10 @@ def process_data(request):
         else:
             values_sf2.append(data["w j"][i])
 
-        values_deficit1.append(float(data["w j"][i] - float(values_sf1[i])))
-        values_deficit2.append(float(data["w j"][i] - float(values_sf2[i])))
+        #values_deficit1.append(float(data["w j"][i] - float(values_sf1[i])))
+        values_deficit1.append(float(data["w j"][i]))
+        #values_deficit2.append(float(data["w j"][i] - float(values_sf2[i])))
+        values_deficit2.append(float(data["w j"][i]))
     data["Wi 1*"] = values_Wi1
     data["Wi 2*"] = values_Wi2
     data["Sf 1"] = values_sf1

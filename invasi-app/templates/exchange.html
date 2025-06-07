@@ -58,6 +58,38 @@
     .dropdown-menu label {
       cursor: pointer;
     }
+
+    /* Add to your existing style section */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #printableArea,
+      #printableArea * {
+        visibility: visible;
+      }
+
+      #printableArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      table {
+        font-size: 8pt !important;
+      }
+
+      th,
+      td {
+        padding: 2px !important;
+      }
+    }
   </style>
 </head>
 
@@ -71,36 +103,38 @@
       <strong>Selected:</strong> <em>None</em>
     </div>
     <form id="damns_select" method="POST">
-  <div class="d-flex align-items-center gap-2"> <!-- Bootstrap flex container with spacing -->
-    
-    <!-- Dropdown button and menu -->
-    <div class="dropdown">
-      <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
-        aria-expanded="false">
-        Seleziona invasi
-      </button>
-      <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdown-menu">
-        {% for file in files %}
-        <li>
-          <label class="dropdown-item">
-            <input type="checkbox" name="selected_files" value="{{ file }}" class="option-checkbox"> {{ file }}
-          </label>
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
+      <div class="d-flex align-items-center gap-2"> <!-- Bootstrap flex container with spacing -->
 
-    <!-- Lambda label -->
-    <span>Lambda: </span>
+        <!-- Dropdown button and menu -->
+        <div class="dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            Seleziona invasi
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdown-menu">
+            {% for file in files %}
+            <li>
+              <label class="dropdown-item">
+                <input type="checkbox" name="selected_files" value="{{ file }}" class="option-checkbox"> {{ file }}
+              </label>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
 
-    <!-- Lambda input -->
-    <input type="text" inputmode="decimal" id="lambda" class="numeric-input" name="lambda" class="form-control" placeholder="Lambda" required style="width: 120px;">
+        <!-- Lambda label -->
+        <span>Lambda: </span>
 
-    <!-- Submit button -->
-    <button type="submit" class="btn btn-primary">Inizia elaborazione</button>
-    
-  </div>
-</form>
+        <!-- Lambda input -->
+        <input type="text" inputmode="decimal" id="lambda" class="numeric-input" name="lambda" class="form-control"
+          placeholder="Lambda" required style="width: 120px;">
+
+        <!-- Submit button -->
+        <button type="submit" class="btn btn-primary">Inizia elaborazione</button>
+        <button onclick="printSection()" class="btn btn-primary no-print">Salva come PDF</button>
+
+      </div>
+    </form>
 
     <br>
     <form id="past_select" method="POST">
@@ -117,395 +151,525 @@
       </div>
     </form>
   </div>
-
-  <div class="container mt-5 table-responsive">
-    <!-- Table for File Data -->
-    <table class="table table-bordered table-striped table-fixed">
-      <thead>
-        <tr>
-          <th rowspan="2">Invaso</th>
-          <th rowspan="2">Condizione idrologica</th>
-          <th colspan="2">Caso 1 (Winv tot)</th>
-          <th colspan="2">Caso 2 (Winv aut)</th>
-        </tr>
-        <tr>
-          <th>S/D<br>(Mm³)</th>
-          <th>Sf<br>(Mm³)</th>
-          <th>S/D<br>(Mm³)</th>
-          <th>Sf<br>(Mm³)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for key, file in (data or {}).items() %}
-        <tr>
-          <td><b>{{ key }}</b></td> <!-- For example, 'Conza 0', 'Conza 1', etc. -->
-          <td>Media</td>
-          <td>{{ file['D/S 1 avg'] }}</td>
-          <td>{{ file['Sf 1 avg'] }}</td>
-          <td>{{ file['D/S 2 avg'] }}</td>
-          <td>{{ file['Sf 2 avg'] }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <!-- Table for Overall Summary -->
-    <table class="table table-bordered table-striped table-fixed mt-4">
-      <thead>
-        <tr>
-          <th colspan="4">Condizione idrologica media</th>
-        </tr>
-        <tr>
-          <th></th>
-          <th>Invasi</th>
-          <th>Disponibilità traversa SV<br>(Mm³)</th>
-          <th>Totale<br>(Mm³)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="row-label">Surplus<br>(Mm³)</td>
-          <td>{{ surplus_sum }}</td>
-          <td rowspan="2" style="vertical-align: middle">{{ traversa }}</td>
-          <td rowspan="2" class="highlight" style="vertical-align: middle">{{ total }}</td>
-        </tr>
-        <tr>
-          <td class="row-label">Deficit<br>(Mm³)</td>
-          <td>{{ deficit_sum }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  {% if calculated_data1 or calculated_data2 or calculated_data3 %}
-  <div id="ExchangeList" class="container mt-5 table-responsive">
-    <ul class="nav nav-tabs" id="dataTabs" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="criterio1-tab" data-bs-toggle="tab" data-bs-target="#criterio1"
-          type="button" role="tab" aria-controls="criterio1" aria-selected="true">
-          Criterio 1
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="criterio2-tab" data-bs-toggle="tab" data-bs-target="#criterio2" type="button"
-          role="tab" aria-controls="criterio2" aria-selected="false">
-          Criterio 2
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="criterio3-tab" data-bs-toggle="tab" data-bs-target="#criterio3" type="button"
-          role="tab" aria-controls="criterio3" aria-selected="false">
-          Criterio 3
-        </button>
-      </li>
-    </ul>
-
-    <div class="tab-content" id="dataTabsContent">
-      <div class="tab-pane fade show active" id="criterio1" role="tabpanel" aria-labelledby="criterio1-tab">
-        <h2>Calculated Alpha Surplus Data</h2>
-        <table class="table table-bordered table-striped table-fixed">
-          <thead>
-            <tr>
-              <th rowspan="2">Invaso</th>
-              <th rowspan="2">Alpha Surplus</th>
-              <th colspan="12">Trasferimenti mensili (Mm³)</th>
-            </tr>
-            <tr>
-              {% set months = [
-              "October", "November", "December", "January", "February", "March",
-              "April", "May", "June", "July", "August", "September"
-              ] %}
-              {% for i in range(0, 12) %}
-              <th style="font-size: small;">{{ months[i] }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in calculated_data1 %}
-            {% if item["alpha_surplus"] %}
-            <tr>
-              <td>{{ item["Filename"] }}</td>
-              <td>{{ item["alpha"] }}</td>
-              {% for value in item["alpha_surplus"] %}
-              <td>{{ value }}</td>
-              {% endfor %}
-            </tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-
-        <table class="table table-bordered table-striped table-fixed">
-          <thead>
-            <tr>
-              <th rowspan="2">Invaso</th>
-              <th rowspan="2">Alpha Deficit</th>
-              <th colspan="12">Trasferimenti mensili (Mm³)</th>
-            </tr>
-            <tr>
-              {% set months = [
-              "October", "November", "December", "January", "February", "March",
-              "April", "May", "June", "July", "August", "September"
-              ] %}
-              {% for i in range(0, 12) %}
-              <th style="font-size: small;">{{ months[i] }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in calculated_data1 %}
-            {% if item["alpha_deficit"] %}
-            <tr>
-              <td>{{ item["Filename"] }}</td>
-              <td>{{ item["alpha"] }}</td>
-              {% for value in item["alpha_deficit"] %}
-              <td>{{ value }}</td>
-              {% endfor %}
-            </tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <div class="tab-pane fade" id="criterio2" role="tabpanel" aria-labelledby="criterio2-tab">
-        <h2>Calculated Alpha Surplus Data</h2>
-        <table class="table table-bordered table-striped table-fixed">
-          <thead>
-            <tr>
-              <th rowspan="2">Invaso</th>
-              <th rowspan="2">Alpha Surplus</th>
-              <th colspan="12">Trasferimenti mensili (Mm³)</th>
-            </tr>
-            <tr>
-              {% set months = [
-              "October", "November", "December", "January", "February", "March",
-              "April", "May", "June", "July", "August", "September"
-              ] %}
-              {% for i in range(0, 12) %}
-              <th style="font-size: small;">{{ months[i] }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in calculated_data2 %}
-            {% if item["alpha_surplus"] %}
-            <tr>
-              <td>{{ item["Filename"] }}</td>
-              <td>{{ item["alpha"] }}</td>
-              {% for value in item["alpha_surplus"] %}
-              <td>{{ value }}</td>
-              {% endfor %}
-            </tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-
-        <table class="table table-bordered table-striped table-fixed">
-          <thead>
-            <tr>
-              <th rowspan="2">Invaso</th>
-              <th rowspan="2">Alpha Deficit</th>
-              <th colspan="12">Trasferimenti mensili (Mm³)</th>
-            </tr>
-            <tr>
-              {% set months = [
-              "October", "November", "December", "January", "February", "March",
-              "April", "May", "June", "July", "August", "September"
-              ] %}
-              {% for i in range(0, 12) %}
-              <th style="font-size: small;">{{ months[i] }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in calculated_data2 %}
-            {% if item["alpha_deficit"] %}
-            <tr>
-              <td>{{ item["Filename"] }}</td>
-              <td>{{ item["alpha"] }}</td>
-              {% for value in item["alpha_deficit"] %}
-              <td>{{ value }}</td>
-              {% endfor %}
-            </tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <div class="tab-pane fade" id="criterio3" role="tabpanel" aria-labelledby="criterio3-tab">
-        <h2>Calculated Alpha Surplus Data</h2>
-        <table class="table table-bordered table-striped table-fixed">
-          <thead>
-            <tr>
-              <th rowspan="2">Invaso</th>
-              <th rowspan="2">Alpha Surplus</th>
-              <th colspan="12">Trasferimenti mensili (Mm³)</th>
-            </tr>
-            <tr>
-              {% set months = [
-              "October", "November", "December", "January", "February", "March",
-              "April", "May", "June", "July", "August", "September"
-              ] %}
-              {% for i in range(0, 12) %}
-              <th style="font-size: small;">{{ months[i] }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in calculated_data3 %}
-            {% if item["alpha_surplus"] %}
-            <tr>
-              <td>{{ item["Filename"] }}</td>
-              <td>{{ item["alpha"] }}</td>
-              {% for value in item["alpha_surplus"] %}
-              <td>{{ value }}</td>
-              {% endfor %}
-            </tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-
-        <table class="table table-bordered table-striped table-fixed">
-          <thead>
-            <tr>
-              <th rowspan="2">Invaso</th>
-              <th rowspan="2">Alpha Deficit</th>
-              <th colspan="12">Trasferimenti mensili (Mm³)</th>
-            </tr>
-            <tr>
-              {% set months = [
-              "October", "November", "December", "January", "February", "March",
-              "April", "May", "June", "July", "August", "September"
-              ] %}
-              {% for i in range(0, 12) %}
-              <th style="font-size: small;">{{ months[i] }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in calculated_data3 %}
-            {% if item["alpha_deficit"] %}
-            <tr>
-              <td>{{ item["Filename"] }}</td>
-              <td>{{ item["alpha"] }}</td>
-              {% for value in item["alpha_deficit"] %}
-              <td>{{ value }}</td>
-              {% endfor %}
-            </tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-
-        <br>
-
-        <table class="table table-bordered table-striped table-fixed">
-          <thead>
-            <tr>
-              <th rowspan="2" colspan="2">Invaso</th>
-              <th colspan="16">Comparazione tra Deficit/Surplus (Mm³)</th>
-            </tr>
-            <tr>
-              <th colspan="4">D/S 1 pre-elaborazione</th>
-              <th colspan="4">D/S 1 post-elaborazione</th>
-              <th colspan="4">D/S 2 pre-elaborazione</th>
-              <th colspan="4">D/S 2 post-elaborazione</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in comparison %}
-            <tr>
-              <td colspan="2">{{ item["Filename"] }}</td>
-              <td colspan="4">{{ item["D/S 1*"] }}</td>
-              <td colspan="4">{{ item["D/S 1* post"] }}</td>
-              <td colspan="4">{{ item["D/S 2*"] }}</td>
-              <td colspan="4">{{ item["D/S 2* post"] }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-    </div>
+  {% if filename %}
+  <div class="mt-3 text-center">
+    <h4 id="filename">Filename: {{ filename }}</h4>
   </div>
   {% endif %}
-  </div>
+  <div id="printableArea">
+    <div class="container mt-5">
+      <div class="container mt-5 table-responsive">
+        <!-- Table for File Data -->
+        <table class="table table-bordered table-striped table-fixed">
+          <thead>
+            <tr>
+              <th rowspan="2">Invaso</th>
+              <th rowspan="2">Condizione idrologica</th>
+              <th colspan="2">Caso 1 (Winv tot)</th>
+              <th colspan="2">Caso 2 (Winv aut)</th>
+            </tr>
+            <tr>
+              <th>S/D<br>(Mm³)</th>
+              <th>Sf<br>(Mm³)</th>
+              <th>S/D<br>(Mm³)</th>
+              <th>Sf<br>(Mm³)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key, file in (data or {}).items() %}
+            <tr>
+              <td><b>{{ key }}</b></td> <!-- For example, 'Conza 0', 'Conza 1', etc. -->
+              <td>Media</td>
+              <td>{{ file['D/S 1 avg'] }}</td>
+              <td>{{ file['Sf 1 avg'] }}</td>
+              <td>{{ file['D/S 2 avg'] }}</td>
+              <td>{{ file['Sf 2 avg'] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // Get references to elements
-    const checkboxes = document.querySelectorAll('.option-checkbox');
-    const selectedValuesContainer = document.getElementById('selected-values');
-    const dropdownMenu = document.getElementById('dropdown-menu');
-    const dropdownButton = document.getElementById('dropdownMenuButton');
-    const dropdownContainer = document.getElementById('dropdown-container');
+        <!-- Table for Overall Summary -->
+        <table class="table table-bordered table-striped table-fixed mt-4">
+          <thead>
+            <tr>
+              <th colspan="4">Condizione idrologica media</th>
+            </tr>
+            <tr>
+              <th></th>
+              <th>Invasi</th>
+              <th>Disponibilità traversa SV<br>(Mm³)</th>
+              <th>Totale<br>(Mm³)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-label">Surplus<br>(Mm³)</td>
+              <td>{{ surplus_sum }}</td>
+              <td rowspan="2" style="vertical-align: middle">{{ traversa }}</td>
+              <td rowspan="2" class="highlight" style="vertical-align: middle">{{ total }}</td>
+            </tr>
+            <tr>
+              <td class="row-label">Deficit<br>(Mm³)</td>
+              <td>{{ deficit_sum }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-    // Handle selecting or deselecting options
-    checkboxes.forEach(checkbox => {
-      checkbox.addEventListener('change', () => {
-        const selectedOptions = Array.from(checkboxes)
-          .filter(cb => cb.checked)
-          .map(cb => cb.value);
+      {% if calculated_data1 or calculated_data2 or calculated_data3 %}
+      <div id="ExchangeList" class="container mt-5 table-responsive">
+        <ul class="nav nav-tabs" id="dataTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="criterio1-tab" data-bs-toggle="tab" data-bs-target="#criterio1"
+              type="button" role="tab" aria-controls="criterio1" aria-selected="true">
+              Criterio 1
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="criterio2-tab" data-bs-toggle="tab" data-bs-target="#criterio2" type="button"
+              role="tab" aria-controls="criterio2" aria-selected="false">
+              Criterio 2
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="criterio3-tab" data-bs-toggle="tab" data-bs-target="#criterio3" type="button"
+              role="tab" aria-controls="criterio3" aria-selected="false">
+              Criterio 3
+            </button>
+          </li>
+        </ul>
 
-        // Clear previous selections
-        selectedValuesContainer.innerHTML = `<strong>Selected:</strong> `;
+        <div class="tab-content" id="dataTabsContent">
+          <div class="tab-pane fade show active" id="criterio1" role="tabpanel" aria-labelledby="criterio1-tab">
+            <table class="table table-bordered table-striped table-fixed">
+              <thead>
+                <tr>
+                  <th rowspan="2">Invaso</th>
+                  <th rowspan="2">Alpha Surplus</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 1</th>
+                </tr>
+                <tr>
+                  {% set months = [
+                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
+                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
+                  ] %}
+                  {% for i in range(0, 12) %}
+                  <th style="font-size: small;">{{ months[i] }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in calculated_data1 %}
+                {% if item["alpha_surplus"] %}
+                <tr>
+                  <td>{{ item["Filename"] }}</td>
+                  <td>{{ item["alpha"] }}</td>
+                  {% for value in item["alpha_surplus"] %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
 
-        if (selectedOptions.length === 0) {
-          selectedValuesContainer.innerHTML += `<em>None</em>`;
+            <table class="table table-bordered table-striped table-fixed">
+              <thead>
+                <tr>
+                  <th rowspan="2">Invaso</th>
+                  <th rowspan="2">Alpha Deficit</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 1</th>
+                </tr>
+                <tr>
+                  {% set months = [
+                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
+                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
+                  ] %}
+                  {% for i in range(0, 12) %}
+                  <th style="font-size: small;">{{ months[i] }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in calculated_data1 %}
+                {% if item["alpha_deficit"] %}
+                <tr>
+                  <td>{{ item["Filename"] }}</td>
+                  <td>{{ item["alpha"] }}</td>
+                  {% for value in item["alpha_deficit"] %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tab-pane fade" id="criterio2" role="tabpanel" aria-labelledby="criterio2-tab">
+            <table class="table table-bordered table-striped table-fixed">
+              <thead>
+                <tr>
+                  <th rowspan="2">Invaso</th>
+                  <th rowspan="2">Alpha Surplus</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2</th>
+                </tr>
+                <tr>
+                  {% set months = [
+                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
+                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
+                  ] %}
+                  {% for i in range(0, 12) %}
+                  <th style="font-size: small;">{{ months[i] }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in calculated_data2 %}
+                {% if item["alpha_surplus"] %}
+                <tr>
+                  <td>{{ item["Filename"] }}</td>
+                  <td>{{ item["alpha"] }}</td>
+                  {% for value in item["alpha_surplus"] %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <table class="table table-bordered table-striped table-fixed">
+              <thead>
+                <tr>
+                  <th rowspan="2">Invaso</th>
+                  <th rowspan="2">Alpha Deficit</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2</th>
+                </tr>
+                <tr>
+                  {% set months = [
+                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
+                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
+                  ] %}
+                  {% for i in range(0, 12) %}
+                  <th style="font-size: small;">{{ months[i] }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in calculated_data2 %}
+                {% if item["alpha_deficit"] %}
+                <tr>
+                  <td>{{ item["Filename"] }}</td>
+                  <td>{{ item["alpha"] }}</td>
+                  {% for value in item["alpha_deficit"] %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tab-pane fade" id="criterio3" role="tabpanel" aria-labelledby="criterio3-tab">
+            <table class="table table-bordered table-striped table-fixed">
+              <thead>
+                <tr>
+                  <th rowspan="2">Invaso</th>
+                  <th rowspan="2">Alpha Surplus</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3</th>
+                </tr>
+                <tr>
+                  {% set months = [
+                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
+                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
+                  ] %}
+                  {% for i in range(0, 12) %}
+                  <th style="font-size: small;">{{ months[i] }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in calculated_data3 %}
+                {% if item["alpha_surplus"] %}
+                <tr>
+                  <td>{{ item["Filename"] }}</td>
+                  <td>{{ item["alpha"] }}</td>
+                  {% for value in item["alpha_surplus"] %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <table class="table table-bordered table-striped table-fixed">
+              <thead>
+                <tr>
+                  <th rowspan="2">Invaso</th>
+                  <th rowspan="2">Alpha Deficit</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3</th>
+                </tr>
+                <tr>
+                  {% set months = [
+                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
+                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
+                  ] %}
+                  {% for i in range(0, 12) %}
+                  <th style="font-size: small;">{{ months[i] }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in calculated_data3 %}
+                {% if item["alpha_deficit"] %}
+                <tr>
+                  <td>{{ item["Filename"] }}</td>
+                  <td>{{ item["alpha"] }}</td>
+                  {% for value in item["alpha_deficit"] %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <br>
+
+            <table class="table table-bordered table-striped table-fixed">
+              <thead>
+                <tr>
+                  <th rowspan="2" colspan="2">Invaso</th>
+                  <th colspan="16">Comparazione tra Deficit/Surplus (Mm³)</th>
+                </tr>
+                <tr>
+                  <th colspan="4">D/S 1 pre-elaborazione</th>
+                  <th colspan="4">D/S 1 post-elaborazione</th>
+                  <th colspan="4">D/S 2 pre-elaborazione</th>
+                  <th colspan="4">D/S 2 post-elaborazione</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in comparison %}
+                <tr>
+                  <td colspan="2">{{ item["Filename"] }}</td>
+                  <td colspan="4">{{ item["D/S 1*"] }}</td>
+                  <td colspan="4">{{ item["D/S 1* post"] }}</td>
+                  <td colspan="4">{{ item["D/S 2*"] }}</td>
+                  <td colspan="4">{{ item["D/S 2* post"] }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Get references to elements
+      const checkboxes = document.querySelectorAll('.option-checkbox');
+      const selectedValuesContainer = document.getElementById('selected-values');
+      const dropdownMenu = document.getElementById('dropdown-menu');
+      const dropdownButton = document.getElementById('dropdownMenuButton');
+      const dropdownContainer = document.getElementById('dropdown-container');
+
+      // Handle selecting or deselecting options
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+          const selectedOptions = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+
+          // Clear previous selections
+          selectedValuesContainer.innerHTML = `<strong>Selected:</strong> `;
+
+          if (selectedOptions.length === 0) {
+            selectedValuesContainer.innerHTML += `<em>None</em>`;
+          } else {
+            selectedOptions.forEach(value => {
+              const span = document.createElement('span');
+              span.textContent = value;
+              selectedValuesContainer.appendChild(span);
+            });
+          }
+        });
+      });
+
+      // Function to close the dropdown
+      function closeDropdown() {
+        const dropdown = new bootstrap.Dropdown(dropdownButton);
+        dropdown.hide();
+      }
+
+      // Function to open the dropdown
+      function openDropdown() {
+        const dropdown = new bootstrap.Dropdown(dropdownButton);
+        dropdown.show();
+      }
+
+      // Detect click outside to close the dropdown
+      document.addEventListener('click', function (event) {
+        if (!dropdownContainer.contains(event.target)) {
+          closeDropdown();
         } else {
-          selectedOptions.forEach(value => {
-            const span = document.createElement('span');
-            span.textContent = value;
-            selectedValuesContainer.appendChild(span);
-          });
+          openDropdown();
         }
       });
-    });
+    </script>
 
-    // Function to close the dropdown
-    function closeDropdown() {
-      const dropdown = new bootstrap.Dropdown(dropdownButton);
-      dropdown.hide();
-    }
+    <script>
+      // Select all inputs with the 'numeric-input' class
+      const numericInputs = document.querySelectorAll('.numeric-input');
 
-    // Function to open the dropdown
-    function openDropdown() {
-      const dropdown = new bootstrap.Dropdown(dropdownButton);
-      dropdown.show();
-    }
-
-    // Detect click outside to close the dropdown
-    document.addEventListener('click', function (event) {
-      if (!dropdownContainer.contains(event.target)) {
-        closeDropdown();
-      } else {
-        openDropdown();
-      }
-    });
-  </script>
-
-  <script>
-        // Select all inputs with the 'numeric-input' class
-        const numericInputs = document.querySelectorAll('.numeric-input');
-
-        numericInputs.forEach(input => {
-            // Event listener for each input in the collection
-            input.addEventListener('input', function () {
-                this.value = this.value.replace(/,/g, '.');  // Replace commas with dots on input
-            });
-
-            // Additional listener to handle pasted text with commas
-            input.addEventListener('paste', function (event) {
-                event.preventDefault();  // Prevent default paste
-                const pastedText = event.clipboardData.getData('text');
-                const formattedText = pastedText.replace(/,/g, '.');
-                document.execCommand('insertText', false, formattedText);  // Insert formatted text
-            });
+      numericInputs.forEach(input => {
+        // Event listener for each input in the collection
+        input.addEventListener('input', function () {
+          this.value = this.value.replace(/,/g, '.');  // Replace commas with dots on input
         });
+
+        // Additional listener to handle pasted text with commas
+        input.addEventListener('paste', function (event) {
+          event.preventDefault();  // Prevent default paste
+          const pastedText = event.clipboardData.getData('text');
+          const formattedText = pastedText.replace(/,/g, '.');
+          document.execCommand('insertText', false, formattedText);  // Insert formatted text
+        });
+      });
+    </script>
+
+    <script>
+      function printSection() {
+        // Get the printable area
+        const printContents = document.getElementById("printableArea").innerHTML;
+        // Get filename from the rendered <h4 id="filename"> element
+        const filenameText = document.getElementById("filename")?.textContent || "Filename: N/A";
+        const filename = filenameText.replace("Filename: ", "").trim();
+
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank');
+
+        // Write the printable content with optimized print styles
+        printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Exchange Report</title>
+        <style>
+          @page {
+            size: A4 landscape;
+            margin: 5mm;
+          }
+          body {
+            font-family: Arial, sans-serif;
+            font-size: 9pt;
+            padding: 10px;
+            line-height: 1.2;
+          }
+          table {
+            width: 100%;
+            table-layout: auto;
+            border-collapse: collapse;
+            border: 1px solid #000;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+          }
+          th, td {
+            padding: 3px;
+            border: 1px solid #000;
+            text-align: center;
+            vertical-align: middle;
+            word-wrap: break-word;
+          }
+          th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+          }
+          .table-fixed {
+            table-layout: fixed;
+          }
+          h1, h2 {
+            text-align: center;
+            margin: 10px 0;
+          }
+          /* Ensure tables don't break across pages */
+          tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+          }
+          /* Show all tab content in print */
+          .tab-pane {
+            display: block !important;
+            opacity: 1 !important;
+          }
+          .nav-tabs {
+            display: none;
+          }
+          /* Monthly columns styling */
+          .month-column {
+            width: 5.5%;
+            font-size: 8pt;
+          }
+          /* Main columns styling */
+          .main-column {
+            width: 12%;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Exchange Report</h1>
+        <h1>Invasi: ${filename}</h1>
+        ${printContents}
+        <script>
+          // Function to apply column classes
+          function applyColumnClasses() {
+            // Apply classes to monthly columns
+            const monthHeaders = document.querySelectorAll('th:not([rowspan]):not([colspan])');
+            monthHeaders.forEach((th, index) => {
+              if (index >= 2) { // Assuming first 2 columns are not months
+                th.classList.add('month-column');
+              } else {
+                th.classList.add('main-column');
+              }
+            });
+            
+            // Apply classes to data cells
+            document.querySelectorAll('td').forEach(td => {
+              if (!td.hasAttribute('rowspan') && !td.hasAttribute('colspan')) {
+                const index = Array.from(td.parentNode.children).indexOf(td);
+                if (index >= 2) {
+                  td.classList.add('month-column');
+                } else {
+                  td.classList.add('main-column');
+                }
+              }
+            });
+          }
+          
+          // Wait for the document to be fully ready
+          document.addEventListener('DOMContentLoaded', function() {
+            applyColumnClasses();
+            
+            // Add a small delay to ensure rendering is complete
+            setTimeout(function() {
+              window.print();
+              window.close();
+            }, 1000);
+          });
+        <\/script>
+      </body>
+      </html>
+    `);
+
+        printWindow.document.close();
+      }
     </script>
 </body>
 

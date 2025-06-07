@@ -64,7 +64,7 @@ def dashboard():
                 ["Aitot*", "Etot*", "W*", "Sf 2*", "D/S 2*", "Winv aut", "Wo"],
                 data, "caso2"
             )
-            return render_template('dashboard.html', data=data, months=months, files=files,
+            return render_template('dashboard.html', filename=filename, data=data, months=months, files=files,
                                    plotA="caso1_plot.png", plotB="caso2_plot.png")
     return render_template('dashboard.html', data=None, files=files)
 
@@ -158,7 +158,7 @@ def exchange():
             total = data["total"]
             data = data["data"]
 
-            return render_template('exchange.html', past_exchange=past_exchange, files=files, data=data,
+            return render_template('exchange.html', filename=filename, past_exchange=past_exchange, files=files, data=data,
                                    surplus_sum=surplus_sum, deficit_sum=deficit_sum,
                                    calculated_data1=calculated_data1, calculated_data2=calculated_data2,
                                    calculated_data3=calculated_data3, comparison=comparison, total=total)
@@ -194,8 +194,10 @@ def exchange():
                 selected_files, lambda_value)
             db_data = []
 
+            exchange_name = nameExchange(calculated_data1)
+
             db_data = {
-                "exchange_name": nameExchange(calculated_data1),
+                "exchange_name": exchange_name,
                 "calculated_data1": calculated_data1,
                 "calculated_data2": calculated_data2,
                 "calculated_data3": calculated_data3,
@@ -232,10 +234,12 @@ def exchange():
                 db.session.rollback()
                 flash("Database error occurred while submitting the form.", "danger")
         past_exchange = get_past_exchange()
-        return render_template('exchange.html', past_exchange=past_exchange, files=files, data=data,
-                               surplus_sum=surplus_sum, deficit_sum=deficit_sum,
-                               calculated_data1=calculated_data1, calculated_data2=calculated_data2,
-                               calculated_data3=calculated_data3, comparison=comparison, total=total)
+        return render_template('exchange.html', 
+                                filename=exchange_name, past_exchange=past_exchange, 
+                                files=files, data=data,
+                                surplus_sum=surplus_sum, deficit_sum=deficit_sum,
+                                calculated_data1=calculated_data1, calculated_data2=calculated_data2,
+                                calculated_data3=calculated_data3, comparison=comparison, total=total)
 
     return render_template('exchange.html', past_exchange=past_exchange, files=files, data=None,
                            surplus_sum=0, deficit_sum=0, total=0)
