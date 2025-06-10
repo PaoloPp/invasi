@@ -2,7 +2,7 @@ from itertools import cycle
 from extensions import db
 from models import JsonFile, User, PastExchange, JsonFileTraverse
 from flask_login import current_user
-from sqlalchemy import select
+from sqlalchemy import select, union
 
 import matplotlib.pyplot as plt
 import os
@@ -294,7 +294,6 @@ def get_user_files_traverse():
 
 def get_past_exchange():
     return db.session.execute(db.select(PastExchange.filename).filter_by(user_id=current_user.id)).scalars().all()
-
 
 def get_json(filename_selected):
     return db.session.execute(db.select(JsonFile.json_data).filter_by(filename=filename_selected)).scalar()

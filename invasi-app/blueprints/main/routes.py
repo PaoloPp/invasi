@@ -7,6 +7,9 @@ from collections import defaultdict
 import copy
 import json
 
+# Import os for clearing the console just for debugging purposes
+import os
+
 from models import db, User, JsonFile, PastExchange
 from utilities import *
 
@@ -25,6 +28,7 @@ def load_json_data(filename):
         flash(f"Error parsing JSON from {filename}: {e}", "danger")
         return None
 
+
 def load_json_data_traverse(filename):
     """
     Helper to load and parse JSON data.
@@ -36,6 +40,7 @@ def load_json_data_traverse(filename):
     except json.JSONDecodeError as e:
         flash(f"Error parsing JSON from {filename}: {e}", "danger")
         return None
+
 
 def load_past_json_data(filename):
     """
@@ -156,7 +161,7 @@ def manage_traverse():
             if filename:
                 data = load_json_data_traverse(filename)
                 return render_template('form_traverse.html', data=data, files=files)
-            
+
         elif 'delete' in request.form:
             filename = request.form.get("data_select")
             if filename:
@@ -208,7 +213,7 @@ def manage_traverse():
                         "Database error occurred while submitting the form.", "danger")
 
                 return redirect(url_for('main.manage_traverse'))
-        
+
     return render_template('form_traverse.html', data=data, files=files)
 
 
@@ -239,7 +244,7 @@ def exchange():
 
             return render_template('exchange.html', filename=filename, data=data,
                                    past_exchange=past_exchange, files=files, traverse_files=traverse_files,
-                                   surplus_sum=surplus_sum, deficit_sum=deficit_sum,
+                                   surplus_sum=surplus_sum, deficit_sum=deficit_sum, traversa=traverse_amount,
                                    calculated_data1=calculated_data1, calculated_data2=calculated_data2,
                                    calculated_data3=calculated_data3, comparison=comparison, total=total)
         if 'delete' in request.form:
@@ -266,12 +271,14 @@ def exchange():
             return redirect(url_for('main.exchange'))
 
         selected_files = request.form.getlist('selected_files')
+        selected_traverse = request.form.getlist('selected_traverse')
         lambda_value = float(request.form.get('lambda'))
+
         if selected_files:
-            data, surplus_sum, deficit_sum, total = calculate_exchange(
-                selected_files)
+            data, surplus_sum, deficit_sum, traverse_amount, total = calculate_exchange(
+                selected_files, selected_traverse)
             calculated_data1, calculated_data2, calculated_data3, comparison = split_json_by_deficit_surplus(
-                selected_files, lambda_value)
+                selected_files, selected_traverse, lambda_value)
             db_data = []
 
             exchange_name = nameExchange(calculated_data1)
@@ -285,12 +292,13 @@ def exchange():
                 "data": data,
                 "surplus_sum": surplus_sum,
                 "deficit_sum": deficit_sum,
+                "traverse" : traverse_amount,
                 "total": total
             }
 
             if check_entry_existance(db_data["exchange_name"], current_user, PastExchange):
                 flash("Entry already exists", "danger")
-                #Overwrite the existing entry
+                # Overwrite the existing entry
                 entry = db.session.execute(
                     select(PastExchange).filter(
                         PastExchange.user_id == current_user.id,
@@ -314,16 +322,16 @@ def exchange():
                 db.session.rollback()
                 flash("Database error occurred while submitting the form.", "danger")
         past_exchange = get_past_exchange()
-        return render_template('exchange.html', 
-                                filename=exchange_name, data=data,
-                                past_exchange=past_exchange, files=files, traverse_files=traverse_files,
-                                surplus_sum=surplus_sum, deficit_sum=deficit_sum,
-                                calculated_data1=calculated_data1, calculated_data2=calculated_data2,
-                                calculated_data3=calculated_data3, comparison=comparison, total=total)
+        return render_template('exchange.html',
+                               filename=exchange_name, data=data,
+                               past_exchange=past_exchange, files=files, traverse_files=traverse_files,
+                               surplus_sum=surplus_sum, deficit_sum=deficit_sum,
+                               calculated_data1=calculated_data1, calculated_data2=calculated_data2,
+                               calculated_data3=calculated_data3, comparison=comparison, traversa=traverse_amount, total=total)
 
     return render_template('exchange.html', data=None,
                            past_exchange=past_exchange, files=files, traverse_files=traverse_files,
-                           surplus_sum=0, deficit_sum=0, total=0)
+                           surplus_sum=0, deficit_sum=0, traversa=traverse_amount, total=0)
 
 
 def nameExchange(calculated_data):
@@ -335,15 +343,21 @@ def nameExchange(calculated_data):
     return name
 
 
-def calculate_exchange(file_list):
+def calculate_exchange(file_list, traverse_list):
     """
     Process files to calculate exchange values.
     """
     sf_data = {}
     surplus_sum = 0
     deficit_sum = 0
+    traverse_amount = 0
     for filename in file_list:
-        data = load_json_data(filename)
+        try:
+            data = load_json_data(filename)
+        except FileNotFoundError:
+            flash(f"File {filename} not found.", "danger")
+            continue
+
         if not data:
             continue
         key = data.get("Filename", filename)
@@ -359,11 +373,23 @@ def calculate_exchange(file_list):
         elif ds1_avg < 0:
             deficit_sum += ds1_avg
 
-    total = round_floats(surplus_sum + deficit_sum)
-    return round_floats(sf_data), round_floats(surplus_sum), round_floats(deficit_sum), total
+    for filename in traverse_list:
+        try:
+            data = load_json_data_traverse(filename)
+        except FileNotFoundError:
+            flash(f"File {filename} not found.", "danger")
+            continue
+
+        if not data:
+            continue
+        for i in range(12):
+            traverse_amount += data["Pj"][i] - data["Pj(eco)"][i] - data["Pij"][i]
+
+    total = round_floats(surplus_sum + deficit_sum + traverse_amount)
+    return round_floats(sf_data), round_floats(surplus_sum), round_floats(deficit_sum), round_floats(traverse_amount), total
 
 
-def split_json_by_deficit_surplus(file_list, lambda_value):
+def split_json_by_deficit_surplus(file_list, traverse_list, lambda_value):
     """
     Separates JSON files into positive and negative D/S lists and calls the appropriate outflow.
     """
@@ -405,7 +431,7 @@ def split_json_by_deficit_surplus(file_list, lambda_value):
             surplus, deficit, lambda_value)
     elif surplus[1] < abs(deficit[1]):
         calculated_data1, calculated_data2, calculated_data3, comparison = outflowB(
-            surplus, deficit, lambda_value)
+            surplus, deficit, lambda_value, traverse_list)
     else:
         return [], [], []  # fallback in case something unexpected happens
 
@@ -431,9 +457,16 @@ def criteria_a1(surplus, deficit):
     deficit_tmp = deficit
     calculated_data1 = []
     if surplus_tmp[2] > 0:
+        print("Surplus entries:")
+        print(surplus_tmp[0])
         for entry in surplus_tmp[0]:
-            if entry.get("Filename"):
-                json_data = load_json_data(entry.get("Filename"))
+            #print(entry)
+            if entry.get("Filename") and not entry.get("Type"):
+                try:
+                    json_data = load_json_data(entry.get("Filename"))
+                except FileNotFoundError:
+                    flash(f"File {entry.get('Filename')} not found.", "danger")
+                    continue
                 if json_data:
                     # Calculate sum of positive values in "D/S 1 j" for 12 months
                     sum_surplus = sum(
@@ -455,7 +488,33 @@ def criteria_a1(surplus, deficit):
                             k_a[i] = 1
                         else:
                             entry["alpha_surplus"].append(0)
-
+                    calculated_data1.append(entry)
+            else:
+                if entry.get("Type") == "t":
+                    # try:
+                    #    json_data = load_json_data_traverse(entry.get("Filename"))
+                    # except FileNotFoundError:
+                    #    flash(f"File {entry.get('Filename')} not found.", "danger")
+                    #    continue
+                    json_data = entry
+                    sum_surplus = sum(
+                        json_data["delta_r_month"][i] for i in range(12) if json_data["delta_r_month"][i] > 0)
+                    try:
+                        alpha_value = json_data["Data"] / \
+                            sum_surplus
+                    except (IndexError, ZeroDivisionError):
+                        alpha_value = 0
+                    entry["alpha"] = alpha_value
+                    entry["alpha_surplus"] = []
+                    for i in range(12):
+                        if json_data["delta_r_month"][i] > 0:
+                            entry["alpha_surplus"].append(
+                                json_data["delta_r_month"][i] * alpha_value)
+                            edj_tot += json_data["delta_r_month"][i] * \
+                                alpha_value
+                            k_a[i] = 1
+                        else:
+                            entry["alpha_surplus"].append(0)
                     calculated_data1.append(entry)
 
     if deficit_tmp[2] > 0:
@@ -524,8 +583,12 @@ def criteria_a2(surplus, deficit):
 
     if surplus_tmp[2] > 0:
         for entry in surplus_tmp[0]:
-            if entry.get("Filename"):
-                json_data = load_json_data(entry.get("Filename"))
+            if entry.get("Filename") and not entry.get("Type"):
+                try:
+                    json_data = load_json_data(entry.get("Filename"))
+                except FileNotFoundError:
+                    flash(f"File {entry.get('Filename')} not found.", "danger")
+                    continue
                 if json_data:
                     # Calculate sum of positive values in "D/S 1 j" for 12 months
                     sum_surplus = sum(
@@ -542,6 +605,22 @@ def criteria_a2(surplus, deficit):
                         adj_tot * alpha_value if k_b[i] == 1 else 0 for i in range(12)
                     ]
                     calculated_data2.append(entry)
+            else:
+                if entry.get("Type") == "t":
+                    json_data = entry
+                    sum_surplus = sum(
+                        json_data["delta_r_month"][i] for i in range(12) if json_data["delta_r_month"][i] > 0)
+                    try:
+                        alpha_value = json_data["Data"] / \
+                            sum_surplus
+                    except (IndexError, ZeroDivisionError):
+                        alpha_value = 0
+                    entry["alpha"] = alpha_value
+                    entry["alpha_surplus"] = [
+                        adj_tot * alpha_value if k_b[i] == 1 else 0 for i in range(12)
+                    ]
+                    calculated_data2.append(entry)
+
     calculated_data2 = round_floats(calculated_data2)
     return calculated_data2
 
@@ -562,8 +641,14 @@ def criterio_a3(surplus, deficit, lambda_value):
     # Criterio A1
     if surplus_tmp[2] > 0:
         for entry in surplus_tmp[0]:
-            if entry.get("Filename"):
-                json_data = load_json_data(entry.get("Filename"))
+            if entry.get("Filename") and not entry.get("Type"):
+                #Load JSON data for the surplus entry
+                try:
+                    json_data = load_json_data(entry.get("Filename"))
+                except FileNotFoundError:
+                    flash(f"File {entry.get('Filename')} not found.", "danger")
+                    continue
+
                 if json_data:
                     # Calculate sum of positive values in "D/S 1 j" for 12 months
                     sum_surplus = sum(
@@ -584,11 +669,36 @@ def criterio_a3(surplus, deficit, lambda_value):
                         else:
                             entry["alpha_surplus"].append(0)
                     calculated_data_31.append(entry)
+            else:
+                if entry.get("Type") == "t":
+                    json_data = entry
+                    sum_surplus = sum(
+                        json_data["delta_r_month"][i] for i in range(12) if json_data["delta_r_month"][i] > 0)
+                    try:
+                        alpha_value = json_data["Data"] / sum_surplus
+                    except (IndexError, ZeroDivisionError):
+                        alpha_value = 0
+                    entry["alpha"] = alpha_value
+                    entry["alpha_surplus"] = []
+                    for i in range(12):
+                        if json_data["delta_r_month"][i] > 0:
+                            entry["alpha_surplus"].append(
+                                json_data["delta_r_month"][i] * alpha_value * lambda_surplus)
+                            k_a[i] = 1
+                        else:
+                            entry["alpha_surplus"].append(0)
+                    calculated_data_31.append(entry)
 
     if deficit_tmp[2] > 0:
         for entry in deficit_tmp[0]:
             if entry.get("Filename"):
-                json_data = load_json_data(entry.get("Filename"))
+                # Load JSON data for the deficit entry
+                try:
+                    json_data = load_json_data(entry.get("Filename"))
+                except FileNotFoundError:
+                    flash(f"File {entry.get('Filename')} not found.", "danger")
+                    continue
+
                 if json_data:
                     # Calculate sum of positive values in "D/S 1 j" for 12 months
                     sum_deficit = sum(
@@ -613,7 +723,13 @@ def criterio_a3(surplus, deficit, lambda_value):
     if deficit_tmp[2] > 0:
         for entry in deficit_tmp[0]:
             if entry.get("Filename"):
-                json_data = load_json_data(entry.get("Filename"))
+                # Load JSON data for the deficit entry
+                try:
+                    json_data = load_json_data(entry.get("Filename"))
+                except FileNotFoundError:
+                    flash(f"File {entry.get('Filename')} not found.", "danger")
+                    continue
+
                 if json_data:
                     # Calculate sum of positive values in "D/S 1 j" for 12 months
                     sum_deficit = sum(
@@ -642,8 +758,14 @@ def criterio_a3(surplus, deficit, lambda_value):
 
     if surplus_tmp[2] > 0:
         for entry in surplus_tmp[0]:
-            if entry.get("Filename"):
-                json_data = load_json_data(entry.get("Filename"))
+            if entry.get("Filename") and not entry.get("Type"):
+                # Load JSON data for the surplus entry
+                try:
+                    json_data = load_json_data(entry.get("Filename"))
+                except FileNotFoundError:
+                    flash(f"File {entry.get('Filename')} not found.", "danger")
+                    continue
+
                 if json_data:
                     # Calculate sum of positive values in "D/S 1 j" for 12 months
                     sum_surplus = sum(
@@ -655,6 +777,20 @@ def criterio_a3(surplus, deficit, lambda_value):
                         alpha_value = 0
 
                     # Store computed alpha value and the monthly computed values in the dictionary
+                    entry["alpha"] = alpha_value
+                    entry["alpha_surplus"] = [
+                        adj_tot * alpha_value if k_b[i] == 1 else 0 for i in range(12)
+                    ]
+                    calculated_data_32.append(entry)
+            else:
+                if entry.get("Type") == "t":
+                    json_data = entry
+                    sum_surplus = sum(
+                        json_data["delta_r_month"][i] for i in range(12) if json_data["delta_r_month"][i] > 0)
+                    try:
+                        alpha_value = json_data["Data"] / sum_surplus
+                    except (IndexError, ZeroDivisionError):
+                        alpha_value = 0
                     entry["alpha"] = alpha_value
                     entry["alpha_surplus"] = [
                         adj_tot * alpha_value if k_b[i] == 1 else 0 for i in range(12)
@@ -741,8 +877,10 @@ def criterio_a3(surplus, deficit, lambda_value):
                                                   "D/S 1* post": 0,             "D/S 2* post": 0}
         json_data = process_data_post(json_data)
 
-        comparison_entry["D/S 1* post"] = round_floats(json_data.get("D/S 1*")[11])
-        comparison_entry["D/S 2* post"] = round_floats(json_data.get("D/S 2*")[11])
+        comparison_entry["D/S 1* post"] = round_floats(
+            json_data.get("D/S 1*")[11])
+        comparison_entry["D/S 2* post"] = round_floats(
+            json_data.get("D/S 2*")[11])
         comparison.append(comparison_entry)
 
         if existing_file:
@@ -766,29 +904,111 @@ def criterio_a3(surplus, deficit, lambda_value):
 
     calculated_data_3 = round_floats(calculated_data_3)
 
-    #print("Criterio A3.1")
-    #print(round_floats(calculated_data_31))
-    #print("Criterio A3.2")
-    #print(round_floats(calculated_data_32))
-    #print("Summed Values")
-    #print(calculated_data_3)
+    # print("Criterio A3.1")
+    # print(round_floats(calculated_data_31))
+    # print("Criterio A3.2")
+    # print(round_floats(calculated_data_32))
+    # print("Summed Values")
+    # print(calculated_data_3)
     return calculated_data_3, comparison
 
 
-def outflowB(surplus, deficit, traverse):
+def outflowB(surplus, deficit, lambda_value, traverse_list):
     print("Outflow B")
+    print(
+        f"Surplus: {surplus[1]}, Deficit: {deficit[1]}, Traverse List: {traverse_list}")
+    traverse_data = []
+    Ptot = 0
+    Datot = abs(deficit[1]) - surplus[1]  # Deficit managed by the surplus
+    Dbtot = abs(deficit[1]) - Datot  # Defict managed by the traverse
+    print(traverse_list)
+    for traverse in traverse_list:
+        # Retrieve the traverse data
+        traverse_data.append(load_json_data_traverse(traverse))
 
-    Datot = abs(deficit[1]) - surplus[1] #Deficit managed by the surplus
-    Dbtot = abs(deficit[1]) - Datot #Defict managed by the traverse
+    for i in range(len(traverse_data)):
+        tot = 0
+        traverse_data[i]["P_util_month"] = [0] * 12
+        for j in range(12):
+            traverse_data[i]["P_util_month"][j] = traverse_data[i]["Pj"][j] - \
+                traverse_data[i]["Pij"][j] - traverse_data[i]["Pj(eco)"][j]
+            tot += traverse_data[i]["P_util_month"][j]
+            Ptot += traverse_data[i]["P_util_month"][j]
+        traverse_data[i]["P_util_tot"] = tot
 
-    
+    # print(f"Ptot: {Ptot}, Datot: {Datot}, Dbtot: {Dbtot}")
 
+    if Ptot >= Dbtot:
+        print("Ptot > Dbtot")
+        delta_p = Dbtot
 
+    else:
+        print("Ptot < Dbtot")
+        delta_p = Ptot
+        delta_not = Dbtot - Ptot
 
+    try:
+        alpha5 = delta_p / Ptot
+    except ZeroDivisionError:
+        alpha5 = 0
 
+    for i in range(len(traverse_data)):
+        traverse_data[i]["delta_r"] = alpha5 * traverse_data[i]["P_util_tot"]
 
-    calculated_data1 = []
-    calculated_data2 = []
-    calculated_data3 = []
-    comparison = []
+        try:
+            alpha6 = traverse_data[i]["delta_r"] / traverse_data[i]["P_util_tot"]
+        except ZeroDivisionError:
+            alpha6 = 0
+
+        traverse_data[i]["delta_r_month"] = [0] * 12
+        for j in range(12):
+            traverse_data[i]["delta_r_month"][j] = alpha6 * traverse_data[i]["P_util_month"][j]
+            traverse_data[i]["overall_erogation"] = sum(
+                traverse_data[i]["delta_r_month"])
+
+    delta_tot_monthly = []
+    for i in range(12):
+        delta_tot_monthly.append(
+            sum(traverse_data[j]["delta_r_month"][i] for j in range(len(traverse_data))))
+
+    # deficit[1] = -(abs(Datot) + abs(delta_p))   #Update the overall deficit value
+
+    for i in range(len(traverse_data)):  # Add the traverse data to the surplus list
+        surplus[0].append({
+            "Filename": traverse_data[i]["Filename"],
+            "Data": traverse_data[i]["overall_erogation"],
+            "delta_r_month": traverse_data[i]["delta_r_month"],
+            "Type": "t",  # Assuming type 't' for traverse data
+        })
+        # Update the surplus value with the traverse data
+        surplus[1] += traverse_data[i]["overall_erogation"]
+        surplus[2] += 1  # Increment the count of surplus entries
+    print(f"Surplus after traverse: {surplus}")
+
+    # Debug printing
+    # clear = lambda: os.system('clear')
+    # clear()
+    # for i in range(len(traverse_data)):
+    #    print(f"Traverse {i+1}:")
+    #    print(f"  P_util_tot: {traverse_data[i]['P_util_tot']}")
+    #    print(f"  delta_r: {traverse_data[i]['delta_r']}")
+    #    print(f"  delta_r_month: {traverse_data[i]['delta_r_month']}")
+    #    print()
+
+    # clear = lambda: os.system('clear')
+    # clear()
+    # print(surplus)
+    # print()
+    # print(traverse_data[0])
+    # print()
+    # print(traverse_data[1])
+
+    calculated_data1 = criteria_a1(surplus, deficit)
+    calculated_data2 = criteria_a2(surplus, deficit)
+    calculated_data3, comparison = criterio_a3(surplus, deficit, lambda_value)
+
+    #calculated_data1 = []
+    #calculated_data2 = []
+    #calculated_data3, comparison = [], []
+
     return calculated_data1, calculated_data2, calculated_data3, comparison
