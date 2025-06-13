@@ -201,10 +201,10 @@
             <tr>
               <td><b>{{ key }}</b></td> <!-- For example, 'Conza 0', 'Conza 1', etc. -->
               <td>Media</td>
-              <td>{{ file['D/S 1 avg'] }}</td>
-              <td>{{ file['Sf 1 avg'] }}</td>
-              <td>{{ file['D/S 2 avg'] }}</td>
-              <td>{{ file['Sf 2 avg'] }}</td>
+              <td>{{ file['D/S 1 yearly'] }}</td>
+              <td>{{ file['Sf 1 yearly'] }}</td>
+              <td>{{ file['D/S 2 yearly'] }}</td>
+              <td>{{ file['Sf 2 yearly'] }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -268,7 +268,7 @@
                 <tr>
                   <th rowspan="2">Invaso</th>
                   <th rowspan="2">Alpha Surplus</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 1</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 1 - Ed<sub>j</sub> tot{{ calculated_data1[-1]['Edj tot'] }}</th>
                 </tr>
                 <tr>
                   {% set months = [
@@ -366,7 +366,7 @@
                 <tr>
                   <th rowspan="2">Invaso</th>
                   <th rowspan="2">Alpha Deficit</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2 - Ad<sub>j</sub> tot{{ calculated_data2[-1]['Adj tot'] }}</th>
                 </tr>
                 <tr>
                   {% set months = [
@@ -400,7 +400,7 @@
                 <tr>
                   <th rowspan="2">Invaso</th>
                   <th rowspan="2">Alpha Surplus</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3 - Ed<sub>j</sub> tot{{ calculated_data3[-1]['Edj tot'] }}</th>
                 </tr>
                 <tr>
                   {% set months = [
@@ -432,7 +432,7 @@
                 <tr>
                   <th rowspan="2">Invaso</th>
                   <th rowspan="2">Alpha Deficit</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3 - Ad<sub>j</sub> tot{{ calculated_data3[-1]['Adj tot'] }}</th>
                 </tr>
                 <tr>
                   {% set months = [

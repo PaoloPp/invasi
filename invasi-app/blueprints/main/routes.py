@@ -236,13 +236,18 @@ def exchange():
             calculated_data1 = data["calculated_data1"]
             calculated_data2 = data["calculated_data2"]
             calculated_data3 = data["calculated_data3"]
-            comparison = data["comparison"]
+            if data["comparison"]:
+                comparison = data["comparison"]
+            else:
+                comparison = 0
             surplus_sum = data["surplus_sum"]
             deficit_sum = data["deficit_sum"]
             total = data["total"]
-            data = data["data"]
+            traverse_amount = data["traverse"] or 0
+            data1 = data["data"]
 
-            return render_template('exchange.html', filename=filename, data=data,
+
+            return render_template('exchange.html', filename=filename, data=data1,
                                    past_exchange=past_exchange, files=files, traverse_files=traverse_files,
                                    surplus_sum=surplus_sum, deficit_sum=deficit_sum, traversa=traverse_amount,
                                    calculated_data1=calculated_data1, calculated_data2=calculated_data2,
@@ -277,6 +282,7 @@ def exchange():
         if selected_files:
             data, surplus_sum, deficit_sum, traverse_amount, total = calculate_exchange(
                 selected_files, selected_traverse)
+            
             calculated_data1, calculated_data2, calculated_data3, comparison = split_json_by_deficit_surplus(
                 selected_files, selected_traverse, lambda_value)
             db_data = []
@@ -295,6 +301,7 @@ def exchange():
                 "traverse" : traverse_amount,
                 "total": total
             }
+            print(db_data)
 
             if check_entry_existance(db_data["exchange_name"], current_user, PastExchange):
                 flash("Entry already exists", "danger")
@@ -331,13 +338,16 @@ def exchange():
 
     return render_template('exchange.html', data=None,
                            past_exchange=past_exchange, files=files, traverse_files=traverse_files,
-                           surplus_sum=0, deficit_sum=0, traversa=traverse_amount, total=0)
+                           surplus_sum=0, deficit_sum=0, traversa=0, total=0)
 
 
 def nameExchange(calculated_data):
     name = ''
     for i in range(len(calculated_data)):
-        name += calculated_data[i].get("Filename")
+        if calculated_data[i].get("Filename"):
+            name += calculated_data[i].get("Filename")
+        else:
+            continue
         if (i < len(calculated_data) - 1):
             name = name + '-'
     return name
@@ -362,12 +372,21 @@ def calculate_exchange(file_list, traverse_list):
             continue
         key = data.get("Filename", filename)
         sf_data[key] = {
-            "Sf 1 avg": data.get("Sf 1 avg"),
-            "Sf 2 avg": data.get("Sf 2 avg"),
-            "D/S 1 avg": data.get("D/S 1 avg"),
-            "D/S 2 avg": data.get("D/S 2 avg")
+            #"Sf 1 avg": data.get("Sf 1 avg"),
+            #"Sf 2 avg": data.get("Sf 2 avg"),
+            #"D/S 1 avg": data.get("D/S 1 avg"),
+            #"D/S 2 avg": data.get("D/S 2 avg")
+            "D/S 1 yearly": data.get("D/S 1*")[11], 
+            "Sf 1 yearly": data.get("Sf 1*")[11],
+            "D/S 2 yearly": data.get("D/S 2*")[11],
+            "Sf 2 yearly": data.get("Sf 2*")[11]
         }
-        ds1_avg = data.get("D/S 1 avg", 0)
+
+        if data.get("D/S 1*")[11]:
+            ds1_avg = data.get("D/S 1*")[11]
+        else: 
+            ds1_avg = 0
+        #ds1_avg = data.get("D/S 1 avg", 0)
         if ds1_avg > 0:
             surplus_sum += ds1_avg
         elif ds1_avg < 0:
@@ -452,6 +471,7 @@ def outflowA(surplus, deficit, lambda_value):
 def criteria_a1(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
     k_a = [0] * 12
+    edj = [0] * 12
     edj_tot = 0
     surplus_tmp = surplus
     deficit_tmp = deficit
@@ -484,7 +504,8 @@ def criteria_a1(surplus, deficit):
                         if json_data["D/S 1 j"][i] > 0:
                             entry["alpha_surplus"].append(
                                 json_data["D/S 1 j"][i] * alpha_value)
-                            edj_tot += json_data["D/S 1 j"][i] * alpha_value
+                            edj[i] += json_data["D/S 1 j"][i] * alpha_value
+                            #edj_tot += json_data["D/S 1 j"][i] * alpha_value
                             k_a[i] = 1
                         else:
                             entry["alpha_surplus"].append(0)
@@ -516,6 +537,9 @@ def criteria_a1(surplus, deficit):
                         else:
                             entry["alpha_surplus"].append(0)
                     calculated_data1.append(entry)
+        #print("Calculated data 1:")
+        #print(calculated_data1)
+        calculated_data1.append({"Edj tot": edj_tot, "k_a": k_a})    
 
     if deficit_tmp[2] > 0:
         for entry in deficit_tmp[0]:
@@ -535,7 +559,7 @@ def criteria_a1(surplus, deficit):
                     # Store computed alpha value and the monthly computed values in the dictionary
                     entry["alpha"] = alpha_value
                     entry["alpha_deficit"] = [
-                        edj_tot * alpha_value if k_a[i] == 1 else 0 for i in range(12)
+                        edj[i] * alpha_value for i in range(12)
                     ]
                     calculated_data1.append(entry)
 
@@ -547,6 +571,7 @@ def criteria_a1(surplus, deficit):
 def criteria_a2(surplus, deficit):
     # Assuming surplus[0] is a list of dictionaries each containing a "Filename" key
     k_b = [0] * 12
+    adj = [0] * 12
     adj_tot = 0
     surplus_tmp = surplus
     deficit_tmp = deficit
@@ -573,14 +598,19 @@ def criteria_a2(surplus, deficit):
                         if json_data["D/S 1 j"][i] < 0:
                             entry["alpha_deficit"].append(
                                 abs(json_data["D/S 1 j"][i] * alpha_value))
-                            adj_tot = abs(
-                                json_data["D/S 1 j"][i] * alpha_value)
+                            adj[i] = abs(json_data["D/S 1 j"][i] * alpha_value)
+                            #adj_tot = abs(
+                            #    json_data["D/S 1 j"][i] * alpha_value)
                             k_b[i] = 1
                         else:
                             entry["alpha_deficit"].append(0)
 
                     calculated_data2.append(entry)
-
+        
+        #print("Calculated data 2:")
+        #print(calculated_data2)
+        calculated_data2.append({"Adj tot": adj_tot, "k_b": k_b})
+        
     if surplus_tmp[2] > 0:
         for entry in surplus_tmp[0]:
             if entry.get("Filename") and not entry.get("Type"):
@@ -602,7 +632,7 @@ def criteria_a2(surplus, deficit):
                     # Store computed alpha value and the monthly computed values in the dictionary
                     entry["alpha"] = alpha_value
                     entry["alpha_surplus"] = [
-                        adj_tot * alpha_value if k_b[i] == 1 else 0 for i in range(12)
+                        adj[i] * alpha_value for i in range(12)
                     ]
                     calculated_data2.append(entry)
             else:
@@ -661,10 +691,12 @@ def criterio_a3(surplus, deficit, lambda_value):
                     # Store computed alpha value and the monthly computed values in the dictionary
                     entry["alpha"] = alpha_value
                     entry["alpha_surplus"] = []
+                    
                     for i in range(12):
                         if json_data["D/S 1 j"][i] > 0:
                             entry["alpha_surplus"].append(
                                 json_data["D/S 1 j"][i] * alpha_value * lambda_surplus)
+                            edj_tot += json_data["D/S 1 j"][i] * alpha_value * lambda_surplus ##TO VERIFY
                             k_a[i] = 1
                         else:
                             entry["alpha_surplus"].append(0)
@@ -837,6 +869,7 @@ def criterio_a3(surplus, deficit, lambda_value):
 
     # Convert back to a list to match the original format
     calculated_data_3 = list(aggregated_data.values())
+    calculated_data_3.append({"Edj tot": edj_tot, "Adj tot": adj_tot, "k_a": k_a, "k_b": k_b})
 
     # Save past and new surplus/deficit values
     comparison = []
@@ -919,8 +952,10 @@ def outflowB(surplus, deficit, lambda_value, traverse_list):
         f"Surplus: {surplus[1]}, Deficit: {deficit[1]}, Traverse List: {traverse_list}")
     traverse_data = []
     Ptot = 0
-    Datot = abs(deficit[1]) - surplus[1]  # Deficit managed by the surplus
-    Dbtot = abs(deficit[1]) - Datot  # Defict managed by the traverse
+    delta_tot = abs(deficit[1]) - surplus[1]
+    Datot = surplus[1]  # Deficit managed by the surplus
+    Dbtot = delta_tot  # Defict managed by the traverse
+    sufficent = False
     print(traverse_list)
     for traverse in traverse_list:
         # Retrieve the traverse data
@@ -940,11 +975,11 @@ def outflowB(surplus, deficit, lambda_value, traverse_list):
 
     if Ptot >= Dbtot:
         print("Ptot > Dbtot")
-        delta_p = Dbtot
-
+        delta_p = Dbtot             #Amount of surplus that can be covered by the traverse
+        sufficent = True
     else:
         print("Ptot < Dbtot")
-        delta_p = Ptot
+        delta_p = Ptot              #Amount of surplus that can be covered by the traverse
         delta_not = Dbtot - Ptot
 
     try:
@@ -962,28 +997,16 @@ def outflowB(surplus, deficit, lambda_value, traverse_list):
 
         traverse_data[i]["delta_r_month"] = [0] * 12
         for j in range(12):
-            traverse_data[i]["delta_r_month"][j] = alpha6 * traverse_data[i]["P_util_month"][j]
+            traverse_data[i]["delta_r_month"][j] = alpha6 * traverse_data[i]["P_util_month"][j] #Final monthly contribute of a traverse
             traverse_data[i]["overall_erogation"] = sum(
-                traverse_data[i]["delta_r_month"])
+                traverse_data[i]["delta_r_month"]) #Total erogation of a traverse
 
-    delta_tot_monthly = []
+    delta_tot_monthly = [] #Monthly contribution of all traverses
     for i in range(12):
         delta_tot_monthly.append(
-            sum(traverse_data[j]["delta_r_month"][i] for j in range(len(traverse_data))))
+            sum(traverse_data[j]["delta_r_month"][i] for j in range(len(traverse_data)))) 
 
     # deficit[1] = -(abs(Datot) + abs(delta_p))   #Update the overall deficit value
-
-    for i in range(len(traverse_data)):  # Add the traverse data to the surplus list
-        surplus[0].append({
-            "Filename": traverse_data[i]["Filename"],
-            "Data": traverse_data[i]["overall_erogation"],
-            "delta_r_month": traverse_data[i]["delta_r_month"],
-            "Type": "t",  # Assuming type 't' for traverse data
-        })
-        # Update the surplus value with the traverse data
-        surplus[1] += traverse_data[i]["overall_erogation"]
-        surplus[2] += 1  # Increment the count of surplus entries
-    print(f"Surplus after traverse: {surplus}")
 
     # Debug printing
     # clear = lambda: os.system('clear')
@@ -1003,12 +1026,10 @@ def outflowB(surplus, deficit, lambda_value, traverse_list):
     # print()
     # print(traverse_data[1])
 
-    calculated_data1 = criteria_a1(surplus, deficit)
-    calculated_data2 = criteria_a2(surplus, deficit)
-    calculated_data3, comparison = criterio_a3(surplus, deficit, lambda_value)
-
-    #calculated_data1 = []
-    #calculated_data2 = []
-    #calculated_data3, comparison = [], []
+    new_deficit = deficit
+    new_deficit[1] = Datot
+    calculated_data1 = criteria_a1(surplus, new_deficit)
+    calculated_data2 = criteria_a2(surplus, new_deficit)
+    calculated_data3, comparison = criterio_a3(surplus, new_deficit, lambda_value
 
     return calculated_data1, calculated_data2, calculated_data3, comparison
