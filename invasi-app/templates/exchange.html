@@ -227,7 +227,7 @@
             <tr>
               <td class="row-label">Surplus<br>(Mm³)</td>
               <td>{{ surplus_sum }}</td>
-              <td rowspan="2" style="vertical-align: middle">{{ traversa }}</td>
+              <td rowspan="2" style="vertical-align: middle">{{ traverse_tot }}</td>
               <td rowspan="2" class="highlight" style="vertical-align: middle">{{ total }}</td>
             </tr>
             <tr>
@@ -268,7 +268,8 @@
                 <tr>
                   <th rowspan="2">Invaso</th>
                   <th rowspan="2">Alpha Surplus</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 1 - Ed<sub>j</sub> tot{{ calculated_data1[-1]['Edj tot'] }}</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 1 - Cond. Soddisfatte: {{ satisfiedA }}</th>
+                  <!--<th colspan="12">Trasferimenti mensili (Mm³) - Criterio 1 - Ed<sub>j</sub> tot: {{ calculated_data1[-1]['Edj tot'] }} - Cond. Soddisfatte: {{ satisfiedA }}</th>-->
                 </tr>
                 <tr>
                   {% set months = [
@@ -292,6 +293,18 @@
                 </tr>
                 {% endif %}
                 {% endfor %}
+                <!--Add the traverse in the table if present-->
+                {% if traverse %}
+                {% for item in traverse %}
+                <tr>
+                  <td>{{ item["Filename"] }}</td>
+                  <td> </td>
+                  {% for value in item["delta_r_month"] %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+                {% endif %}
               </tbody>
             </table>
 
@@ -334,7 +347,7 @@
                 <tr>
                   <th rowspan="2">Invaso</th>
                   <th rowspan="2">Alpha Surplus</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2 - Cond. Soddisfatte: {{ satisfiedB }}</th>
                 </tr>
                 <tr>
                   {% set months = [
@@ -355,9 +368,22 @@
                   {% for value in item["alpha_surplus"] %}
                   <td>{{ value }}</td>
                   {% endfor %}
+
                 </tr>
                 {% endif %}
                 {% endfor %}
+                <!--Add the traverse in the table if present-->
+                {% if traverse %}
+                {% for item in traverse %}
+                <tr>
+                  <td>{{ item["Filename"] }}</td>
+                  <td> </td>
+                  {% for value in item["delta_r_month"] %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+                {% endif %}
               </tbody>
             </table>
 
@@ -366,7 +392,8 @@
                 <tr>
                   <th rowspan="2">Invaso</th>
                   <th rowspan="2">Alpha Deficit</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2 - Ad<sub>j</sub> tot{{ calculated_data2[-1]['Adj tot'] }}</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2</th>
+                  <!--<th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2 - Ad<sub>j</sub> tot: {{ calculated_data2[-1]['Adj tot'] }}</th>-->
                 </tr>
                 <tr>
                   {% set months = [
@@ -400,7 +427,8 @@
                 <tr>
                   <th rowspan="2">Invaso</th>
                   <th rowspan="2">Alpha Surplus</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3 - Ed<sub>j</sub> tot{{ calculated_data3[-1]['Edj tot'] }}</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3</th>
+                  <!--<th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3 - Ed<sub>j</sub> tot: {{ calculated_data3[-1]['Edj tot'] }}</th>-->
                 </tr>
                 <tr>
                   {% set months = [
@@ -424,6 +452,18 @@
                 </tr>
                 {% endif %}
                 {% endfor %}
+                <!--Add the traverse in the table if present-->
+                {% if traverse %}
+                {% for item in traverse %}
+                <tr>
+                  <td>{{ item["Filename"] }}</td>
+                  <td> </td>
+                  {% for value in item["delta_r_month"] %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+                {% endif %}
               </tbody>
             </table>
 
@@ -432,7 +472,8 @@
                 <tr>
                   <th rowspan="2">Invaso</th>
                   <th rowspan="2">Alpha Deficit</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3 - Ad<sub>j</sub> tot{{ calculated_data3[-1]['Adj tot'] }}</th>
+                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3</th>
+                  <!--<th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3 - Ad<sub>j</sub> tot: {{ calculated_data3[-1]['Adj tot'] }}</th>-->
                 </tr>
                 <tr>
                   {% set months = [
@@ -456,6 +497,7 @@
                 </tr>
                 {% endif %}
                 {% endfor %}
+                
               </tbody>
             </table>
 
@@ -494,7 +536,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
       // Invasi Dropdown Handling
       const invasiCheckboxes = document.querySelectorAll('.option-checkbox');
