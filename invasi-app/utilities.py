@@ -3,10 +3,11 @@ from extensions import db
 from models import JsonFile, User, PastExchange, JsonFileTraverse
 from flask_login import current_user
 from sqlalchemy import select, union
+from sqlalchemy.exc import SQLAlchemyError
 
 import matplotlib.pyplot as plt
 import os
-
+import json
 
 def check_entry_existance(_filename, _current_user, _table):
     existing_file = db.session.execute(
@@ -402,3 +403,80 @@ def retrive_files():
     files = os.listdir("elaborazioni")
     files = [f for f in files if f.endswith('.json')]
     return files
+
+def exchange_comparison(calculated_data, case_id):
+    ''' Compare the calculated data with existing JSON files in the database
+        and update or create new entries.'''
+    print(f"Calculated data: {calculated_data}")
+    print()
+    comparison = []
+    for entry in calculated_data:
+
+        filename = entry.get("Filename")
+
+        if not filename:
+            continue
+        json_file = db.session.execute(
+            select(JsonFile).filter_by(filename=filename)).scalar_one_or_none()
+        if not json_file:
+            continue
+
+        try:
+            json_data = json.loads(json_file.json_data)
+        except json.JSONDecodeError:
+            continue
+
+        if "alpha_surplus" in entry:
+            json_data["E tra j"] = entry["alpha_surplus"]
+
+        if "alpha_deficit" in entry:
+            json_data["A tra"] = entry["alpha_deficit"]
+
+        # Save the updated JSON back into the database under a new filename
+
+        match case_id:
+            case 1:
+                new_filename = filename + " - Criterio 1"
+            case 2:
+                new_filename = filename + " - Criterio 2"
+            case 3:
+                new_filename = filename + " - Criterio 1"
+            case _:
+                # Default case if no match found
+                print(f"Unknown case_id: {case_id}")
+                continue
+
+        # Check if file with new filename exists
+        existing_file = db.session.execute(
+            select(JsonFile).filter_by(filename=new_filename)
+        ).scalar_one_or_none()
+
+        comparison_entry = {"Filename": filename, "D/S 1*": round_floats(json_data.get("D/S 1*")[11]), "D/S 2*": round_floats(json_data.get("D/S 2*")[11]),
+                                                  "D/S 1* post": 0,             "D/S 2* post": 0}
+        json_data = process_data_post(json_data)
+
+        comparison_entry["D/S 1* post"] = round_floats(
+            json_data.get("D/S 1*")[11])
+        comparison_entry["D/S 2* post"] = round_floats(
+            json_data.get("D/S 2*")[11])
+        comparison.append(comparison_entry)
+
+        if existing_file:
+            # Overwrite existing entry
+            existing_file.json_data = json.dumps(json_data)
+            existing_file.user_id = current_user.id
+        else:
+            # Create a new one
+            new_json_file = JsonFile(
+                filename=new_filename,
+                json_data=json.dumps(json_data),
+                user_id=current_user.id
+            )
+            db.session.add(new_json_file)
+
+    try:
+        db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"Error updating json_data with alpha values: {e}")
+    return comparison

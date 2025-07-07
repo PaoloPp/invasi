@@ -339,6 +339,34 @@
                 {% endfor %}
               </tbody>
             </table>
+
+            <br>
+
+            <table class="table table-bordered table-striped table-fixed">
+              <thead>
+                <tr>
+                  <th rowspan="2" colspan="2">Invaso</th>
+                  <th colspan="16">Comparazione tra Deficit/Surplus (Mm³)</th>
+                </tr>
+                <tr>
+                  <th colspan="4">D/S 1 pre-elaborazione</th>
+                  <th colspan="4">D/S 1 post-elaborazione</th>
+                  <th colspan="4">D/S 2 pre-elaborazione</th>
+                  <th colspan="4">D/S 2 post-elaborazione</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in comparison1 %}
+                <tr>
+                  <td colspan="2">{{ item["Filename"] }}</td>
+                  <td colspan="4">{{ item["D/S 1*"] }}</td>
+                  <td colspan="4">{{ item["D/S 1* post"] }}</td>
+                  <td colspan="4">{{ item["D/S 2*"] }}</td>
+                  <td colspan="4">{{ item["D/S 2* post"] }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
 
           <div class="tab-pane fade" id="criterio2" role="tabpanel" aria-labelledby="criterio2-tab">
@@ -416,6 +444,34 @@
                   {% endfor %}
                 </tr>
                 {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <br>
+
+            <table class="table table-bordered table-striped table-fixed">
+              <thead>
+                <tr>
+                  <th rowspan="2" colspan="2">Invaso</th>
+                  <th colspan="16">Comparazione tra Deficit/Surplus (Mm³)</th>
+                </tr>
+                <tr>
+                  <th colspan="4">D/S 1 pre-elaborazione</th>
+                  <th colspan="4">D/S 1 post-elaborazione</th>
+                  <th colspan="4">D/S 2 pre-elaborazione</th>
+                  <th colspan="4">D/S 2 post-elaborazione</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in comparison2 %}
+                <tr>
+                  <td colspan="2">{{ item["Filename"] }}</td>
+                  <td colspan="4">{{ item["D/S 1*"] }}</td>
+                  <td colspan="4">{{ item["D/S 1* post"] }}</td>
+                  <td colspan="4">{{ item["D/S 2*"] }}</td>
+                  <td colspan="4">{{ item["D/S 2* post"] }}</td>
+                </tr>
                 {% endfor %}
               </tbody>
             </table>
@@ -517,7 +573,7 @@
                 </tr>
               </thead>
               <tbody>
-                {% for item in comparison %}
+                {% for item in comparison3 %}
                 <tr>
                   <td colspan="2">{{ item["Filename"] }}</td>
                   <td colspan="4">{{ item["D/S 1*"] }}</td>
