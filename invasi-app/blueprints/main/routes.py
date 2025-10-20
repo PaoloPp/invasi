@@ -1073,22 +1073,15 @@ def _build_criterion_results(
     alpha_one,
     distribution_type,
     external_contributions=None,
-    precomputed=None,
 ):
     donors_total = sum(donor["available"] for donor in donors_info)
     adjustments = {}
     donors_output = []
     donors_checks = []
 
-    precomputed = precomputed or {}
-    monthly_allocations = {}
-
     for donor in donors_info:
-        if donor["name"] in precomputed:
-            monthly_values = precomputed[donor["name"]]
-        else:
-            monthly_values = distribute_amount(
-                donor["available"], distribution_type, alpha_one)
+        monthly_values = distribute_amount(
+            donor["available"], distribution_type, alpha_one)
         donors_output.append({
             "Filename": donor["name"],
             "alpha": donor["available"] / donors_total if donors_total else 0.0,
@@ -1100,24 +1093,20 @@ def _build_criterion_results(
             donor["balance"]["monthly_net"][index] - monthly_values[index]
             for index in range(12)
         ]
-        monthly_allocations[donor["name"]] = monthly_values
 
     receivers_output = []
     receivers_checks = []
     external_contributions = external_contributions or {}
 
     for receiver in receivers_info:
-        if receiver["name"] in precomputed:
-            total_monthly = precomputed[receiver["name"]]
-        else:
-            donor_monthly = distribute_amount(
-                receiver["from_donors"], distribution_type, alpha_one)
-            external_monthly = external_contributions.get(
-                receiver["name"], [0.0] * 12)
-            total_monthly = [
-                donor_monthly[index] + external_monthly[index]
-                for index in range(12)
-            ]
+        donor_monthly = distribute_amount(
+            receiver["from_donors"], distribution_type, alpha_one)
+        external_monthly = external_contributions.get(
+            receiver["name"], [0.0] * 12)
+        total_monthly = [
+            donor_monthly[index] + external_monthly[index]
+            for index in range(12)
+        ]
         receivers_output.append({
             "Filename": receiver["name"],
             "alpha": receiver["share_ratio"],
@@ -1129,7 +1118,6 @@ def _build_criterion_results(
             receiver["balance"]["monthly_net"][index] + total_monthly[index]
             for index in range(12)
         ]
-        monthly_allocations[receiver["name"]] = total_monthly
 
     for entry in all_entries:
         if entry["name"] not in adjustments:
@@ -1142,10 +1130,10 @@ def _build_criterion_results(
     }
     output = donors_output + receivers_output + [summary]
     comparison = _build_comparison(all_entries, adjustments)
-    return round_floats(output), satisfied, round_floats(comparison), monthly_allocations
+    return round_floats(output), satisfied, round_floats(comparison)
 
 
-def _apply_model_a(all_entries, donors, receivers, alpha_one, blend_ratio):
+def _apply_model_a(all_entries, donors, receivers, alpha_one):
     stot = sum(d["balance"]["surplus_net"] for d in donors)
     dtot = sum(r["balance"]["deficit_net"] for r in receivers)
     delta = max(stot - dtot, 0.0)
@@ -1175,33 +1163,18 @@ def _apply_model_a(all_entries, donors, receivers, alpha_one, blend_ratio):
         })
 
     external = {}
-    criterion1, satisfied1, comparison1, monthly1 = _build_criterion_results(
+    criterion1, satisfied1, comparison1 = _build_criterion_results(
         all_entries, donors_info, receivers_info, alpha_one, 1, external)
-    criterion2, satisfied2, comparison2, monthly2 = _build_criterion_results(
+    criterion2, satisfied2, comparison2 = _build_criterion_results(
         all_entries, donors_info, receivers_info, alpha_one, 2, external)
 
-    precomputed = {}
-    blend_ratio = max(min(blend_ratio, 1.0), 0.0)
-    for name in set(list(monthly1.keys()) + list(monthly2.keys())):
-        values1 = monthly1.get(name, [0.0] * 12)
-        values2 = monthly2.get(name, [0.0] * 12)
-        blended = [
-            blend_ratio * values1[index] + (1.0 - blend_ratio) * values2[index]
-            for index in range(12)
-        ]
-        precomputed[name] = blended
+    criterion3 = copy.deepcopy(criterion2)
+    if criterion3:
+        summary = criterion3[-1]
+        if isinstance(summary, dict):
+            summary["criterion"] = 3
 
-    criterion3, satisfied3, comparison3, _ = _build_criterion_results(
-        all_entries,
-        donors_info,
-        receivers_info,
-        alpha_one,
-        3,
-        external,
-        precomputed,
-    )
-
-    comparison = [comparison1, comparison2, comparison3]
+    comparison = [comparison1, comparison2, comparison2]
     return criterion1, satisfied1, criterion2, satisfied2, criterion3, comparison, []
 
 
@@ -1212,7 +1185,6 @@ def _apply_model_b(
     resources,
     total_resource,
     alpha_one,
-    blend_ratio,
 ):
     stot = sum(d["balance"]["surplus_net"] for d in donors)
     dtot = sum(r["balance"]["deficit_net"] for r in receivers)
@@ -1262,33 +1234,18 @@ def _apply_model_b(
             for index in range(12)
         ]
 
-    criterion1, satisfied1, comparison1, monthly1 = _build_criterion_results(
+    criterion1, satisfied1, comparison1 = _build_criterion_results(
         all_entries, donors_info, receivers_info, alpha_one, 1, external_contributions)
-    criterion2, satisfied2, comparison2, monthly2 = _build_criterion_results(
+    criterion2, satisfied2, comparison2 = _build_criterion_results(
         all_entries, donors_info, receivers_info, alpha_one, 2, external_contributions)
 
-    precomputed = {}
-    blend_ratio = max(min(blend_ratio, 1.0), 0.0)
-    for name in set(list(monthly1.keys()) + list(monthly2.keys())):
-        values1 = monthly1.get(name, [0.0] * 12)
-        values2 = monthly2.get(name, [0.0] * 12)
-        blended = [
-            blend_ratio * values1[index] + (1.0 - blend_ratio) * values2[index]
-            for index in range(12)
-        ]
-        precomputed[name] = blended
+    criterion3 = copy.deepcopy(criterion2)
+    if criterion3:
+        summary = criterion3[-1]
+        if isinstance(summary, dict):
+            summary["criterion"] = 3
 
-    criterion3, satisfied3, comparison3, _ = _build_criterion_results(
-        all_entries,
-        donors_info,
-        receivers_info,
-        alpha_one,
-        3,
-        external_contributions,
-        precomputed,
-    )
-
-    comparison = [comparison1, comparison2, comparison3]
+    comparison = [comparison1, comparison2, comparison2]
     return criterion1, satisfied1, criterion2, satisfied2, criterion3, comparison, scaled_resources
 
 
@@ -1320,12 +1277,9 @@ def split_json_by_deficit_surplus(file_list, traverse_list, lambda_value):
     receivers = [entry for entry in entries if entry["balance"]["deficit_net"] > 0]
 
     try:
-        lambda_raw = float(lambda_value)
+        alpha_one = float(lambda_value)
     except (TypeError, ValueError):
-        lambda_raw = 0.7
-
-    alpha_one = lambda_raw
-    blend_ratio = max(min(lambda_raw, 1.0), 0.0)
+        alpha_one = 0.7
 
     stot = sum(d["balance"]["surplus_net"] for d in donors)
     dtot = sum(r["balance"]["deficit_net"] for r in receivers)
@@ -1335,7 +1289,7 @@ def split_json_by_deficit_surplus(file_list, traverse_list, lambda_value):
         return [], True, [], True, [], empty_comparison, []
 
     if stot >= dtot:
-        return _apply_model_a(entries, donors, receivers, alpha_one, blend_ratio)
+        return _apply_model_a(entries, donors, receivers, alpha_one)
 
     return _apply_model_b(
-        entries, donors, receivers, resources, total_resource, alpha_one, blend_ratio)
+        entries, donors, receivers, resources, total_resource, alpha_one)
