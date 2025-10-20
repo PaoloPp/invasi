@@ -568,6 +568,9 @@ def criteria_a1(surplus, deficit):
                     )
 
                     try:
+                        #alpha_value = abs(json_data["D/S 1*"][11] / deficit[1])
+                        # When using a wier, the defict should scale down to the 
+                        # amount that is not supported by the weir itself
                         alpha_value = abs(json_data["D/S 1*"][11] / deficit[1])
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
@@ -899,75 +902,8 @@ def criterio_a3(surplus, deficit, lambda_value):
     # Save past and new surplus/deficit values
     comparison3 = exchange_comparison(calculated_data_3, 3)
 
-    ########## Adding the "alpha_surplus" to "E tra j" and "alpha_deficit" to "A tra" ##########
-    # for entry in calculated_data_3:
-#
-    #    filename = entry.get("Filename")
-#
-    #    if not filename:
-    #        continue
-    #    json_file = db.session.execute(
-    #        select(JsonFile).filter_by(filename=filename)).scalar_one_or_none()
-    #    if not json_file:
-    #        continue
-#
-    #    try:
-    #        json_data = json.loads(json_file.json_data)
-    #    except json.JSONDecodeError:
-    #        continue
-#
-    #    if "alpha_surplus" in entry:
-    #        json_data["E tra j"] = entry["alpha_surplus"]
-#
-    #    if "alpha_deficit" in entry:
-    #        json_data["A tra"] = entry["alpha_deficit"]
-#
-    #    # Save the updated JSON back into the database under a new filename
-#
-    #    new_filename = filename + " - Criterio 3"
-#
-    #    # Check if file with new filename exists
-    #    existing_file = db.session.execute(
-    #        select(JsonFile).filter_by(filename=new_filename)
-    #    ).scalar_one_or_none()
-#
-    #    comparison_entry = {"Filename": filename, "D/S 1*": round_floats(json_data.get("D/S 1*")[11]), "D/S 2*": round_floats(json_data.get("D/S 2*")[11]),
-    #                                              "D/S 1* post": 0,             "D/S 2* post": 0}
-    #    json_data = process_data_post(json_data)
-#
-    #    comparison_entry["D/S 1* post"] = round_floats(
-    #        json_data.get("D/S 1*")[11])
-    #    comparison_entry["D/S 2* post"] = round_floats(
-    #        json_data.get("D/S 2*")[11])
-    #    comparison.append(comparison_entry)
-#
-    #    if existing_file:
-    #        # Overwrite existing entry
-    #        existing_file.json_data = json.dumps(json_data)
-    #        existing_file.user_id = current_user.id
-    #    else:
-    #        # Create a new one
-    #        new_json_file = JsonFile(
-    #            filename=new_filename,
-    #            json_data=json.dumps(json_data),
-    #            user_id=current_user.id
-    #        )
-    #        db.session.add(new_json_file)
-#
-    # try:
-    #    db.session.commit()
-    # except SQLAlchemyError as e:
-    #    db.session.rollback()
-    #    print(f"Error updating json_data with alpha values: {e}")
-
     calculated_data_3 = round_floats(calculated_data_3)
 
-    # print("Criterio A3.1")
-    # print(round_floats(calculated_data_31))
-    # print("Criterio A3.2")
-    # print(round_floats(calculated_data_32))
-    # print("Summed Values")
-    # print(calculated_data_3)
     return calculated_data_3, comparison3
 
 
@@ -1010,7 +946,8 @@ def outflowB(surplus, deficit, lambda_value, traverse_list):
     else:
         print("Ptot < Dbtot")
         # delta_p = Ptot              #Amount of surplus that can be covered by the traverse
-        delta_not = Dbtot - Ptot
+        #delta_not = Dbtot - Ptot
+        delta_p = Dbtot - Ptot
 
     try:
         alpha5 = delta_p / Ptot
@@ -1039,25 +976,6 @@ def outflowB(surplus, deficit, lambda_value, traverse_list):
     for i in range(12):
         delta_tot_monthly.append(
             sum(traverse_data[j]["delta_r_month"][i] for j in range(len(traverse_data))))
-
-    # deficit[1] = -(abs(Datot) + abs(delta_p))   #Update the overall deficit value
-
-    # Debug printing
-    # clear = lambda: os.system('clear')
-    # clear()
-    # for i in range(len(traverse_data)):
-    #    print(f"Traverse {i+1}:")
-    #    print(f"  P_util_tot: {traverse_data[i]['P_util_tot']}")
-    #    print(f"  delta_r: {traverse_data[i]['delta_r']}")
-    #    print(f"  delta_r_month: {traverse_data[i]['delta_r_month']}")
-    #    print()
-
-    # clear = lambda: os.system('clear')
-    # clear()
-    # print(surplus)
-    # print()
-    # print(traverse_data)
-    # print()
 
     new_deficit = deficit
     new_deficit[1] = -Datot
