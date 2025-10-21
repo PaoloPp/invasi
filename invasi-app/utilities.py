@@ -1,4 +1,6 @@
 from itertools import cycle
+from typing import Dict, Iterable, List, Tuple
+
 from extensions import db
 from models import JsonFile, User, PastExchange, JsonFileTraverse
 from flask_login import current_user
@@ -397,6 +399,132 @@ def somma_cumulata(_var):
 def coeff(_nominalValue, _varCoeff):  # Ai, A'i, Ditot, Eipot, Eiirr, Eiind
     coeffValue = float(_nominalValue) * float(_varCoeff)
     return coeffValue
+
+
+def compute_reservoir_balance(data: Dict) -> Dict:
+    """Return monthly and annual surplus/deficit information for a reservoir."""
+
+    monthly_net = data.get("D/S 1 j", [0.0] * 12)
+    if len(monthly_net) < 12:
+        monthly_net = monthly_net + [0.0] * (12 - len(monthly_net))
+
+    monthly_surplus = [max(value, 0.0) for value in monthly_net]
+    monthly_deficit = [max(-value, 0.0) for value in monthly_net]
+
+    surplus_gross = sum(monthly_surplus)
+    deficit_gross = sum(monthly_deficit)
+    surplus_net = surplus_gross - deficit_gross
+    deficit_net = deficit_gross - surplus_gross
+
+    return {
+        "monthly_net": monthly_net,
+        "monthly_surplus": monthly_surplus,
+        "monthly_deficit": monthly_deficit,
+        "surplus_gross": surplus_gross,
+        "deficit_gross": deficit_gross,
+        "surplus_net": surplus_net,
+        "deficit_net": deficit_net,
+    }
+
+
+def distribute_amount(
+    amount: float,
+    criterion: int,
+    alpha_one: float,
+    periods: Tuple[int, int] = (7, 5)
+) -> List[float]:
+    """Return the monthly distribution of a yearly amount according to the criterion."""
+
+    if amount <= 0:
+        return [0.0] * 12
+
+    if criterion == 1:
+        monthly_value = amount / 12.0
+        return [monthly_value] * 12
+
+    ka, kb = periods
+    ka = max(min(ka, 12), 1)
+    kb = max(12 - ka, 1)
+
+    alpha_one = max(min(alpha_one, 1.0), 0.0)
+    if alpha_one <= 0.5:
+        alpha_one = 0.5
+    alpha_two = 1.0 - alpha_one
+
+    first_period = amount * alpha_one / ka
+    second_period = amount * alpha_two / kb
+
+    values = []
+    for index in range(12):
+        if index < ka:
+            values.append(first_period)
+        else:
+            values.append(second_period)
+    return values
+
+
+def compute_additional_resources(traverse_entries: Iterable[Dict]) -> Tuple[List[Dict], List[float], float]:
+    """Compute the usable contribution of additional flowing resources."""
+
+    resources: List[Dict] = []
+    monthly_totals = [0.0] * 12
+    total_available = 0.0
+
+    for entry in traverse_entries:
+        monthly_available = []
+        for index in range(12):
+            pj = entry.get("Pj", [0.0] * 12)[index]
+            pij = entry.get("Pij", [0.0] * 12)[index]
+            pjeco = entry.get("Pj(eco)", [0.0] * 12)[index]
+            available = max(pj - pij - pjeco, 0.0)
+            monthly_available.append(available)
+
+        total_entry = sum(monthly_available)
+        total_available += total_entry
+
+        monthly_totals = [
+            monthly_totals[i] + monthly_available[i] for i in range(12)
+        ]
+
+        resources.append({
+            "Filename": entry.get("Filename", ""),
+            "monthly_available": monthly_available,
+            "total_available": total_entry,
+        })
+
+    return resources, monthly_totals, total_available
+
+
+def verify_donor_constraints(data: Dict, additional_release: List[float]) -> bool:
+    """Check condition (7.1) for a donor reservoir."""
+
+    storage_prev = data.get("Wo", 0.0)
+    min_volume = data.get("Winv aut", 0.0)
+    inflow = data.get("Aitot j", data.get("A j", [0.0] * 12))
+    demand = data.get("Etot j", [0.0] * 12)
+
+    satisfied = True
+    for index in range(12):
+        storage_prev = storage_prev + inflow[index] - demand[index] - additional_release[index]
+        if storage_prev < min_volume - 1e-6:
+            satisfied = False
+    return satisfied
+
+
+def verify_receiver_constraints(data: Dict, additional_inflow: List[float]) -> bool:
+    """Check condition (7.2) for a receiver reservoir."""
+
+    storage_prev = data.get("Wo", 0.0)
+    max_volume = data.get("Winv tot", float("inf"))
+    inflow = data.get("Aitot j", data.get("A j", [0.0] * 12))
+    demand = data.get("Etot j", [0.0] * 12)
+
+    satisfied = True
+    for index in range(12):
+        storage_prev = storage_prev + inflow[index] + additional_inflow[index] - demand[index]
+        if storage_prev > max_volume + 1e-6:
+            satisfied = False
+    return satisfied
 
 
 def retrive_files():
