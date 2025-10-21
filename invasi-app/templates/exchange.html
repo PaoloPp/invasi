@@ -236,6 +236,28 @@
             </tr>
           </tbody>
         </table>
+
+        <table class="table table-bordered table-striped table-fixed mt-3">
+          <thead>
+            <tr>
+              <th colspan="2">Surplus trasferito</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>S′(t) (Mm³)</td>
+              <td>{{ scaled_surplus_sum }}</td>
+            </tr>
+            <tr>
+              <td>Rapporto di trasferimento</td>
+              <td>{{ transfer_ratio if transfer_ratio is not none else '—' }}</td>
+            </tr>
+            <tr>
+              <td>Totale scalato (Mm³)</td>
+              <td>{{ scaled_total }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {% if calculated_data1 or calculated_data2 or calculated_data3 %}

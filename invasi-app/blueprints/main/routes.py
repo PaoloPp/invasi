@@ -242,6 +242,9 @@ def exchange():
             total = data["total"]
             traverse_data = data["traverse"]
             traverse_amount = data.get("traverse_amount", 0)
+            scaled_surplus_sum = data.get("scaled_surplus_sum", surplus_sum)
+            transfer_ratio = data.get("transfer_ratio")
+            scaled_total = data.get("scaled_total", total)
             data1 = data["data"]
             satisfiedA = data.get("satisfiedA", None)
             satisfiedB = data.get("satisfiedB", None)
@@ -253,7 +256,9 @@ def exchange():
                                    calculated_data3=calculated_data3, total=total,
                                    comparison1=comparison[0], comparison2=comparison[1], comparison3=comparison[2],
                                    traverse=traverse_data, traverse_tot=traverse_amount,
-                                   satisfiedA=satisfiedA, satisfiedB=satisfiedB)
+                                   satisfiedA=satisfiedA, satisfiedB=satisfiedB,
+                                   scaled_surplus_sum=scaled_surplus_sum, transfer_ratio=transfer_ratio,
+                                   scaled_total=scaled_total)
         if 'delete' in request.form:
             filename = request.form.get("past_select")
             if filename:
@@ -286,13 +291,21 @@ def exchange():
             data, surplus_sum, deficit_sum, traverse_amount, total = calculate_exchange(
                 selected_files, selected_traverse)
 
-            calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data = split_json_by_deficit_surplus(
+            calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data, transfer_metadata = split_json_by_deficit_surplus(
                 selected_files, selected_traverse, lambda_value)
             db_data = []
 
             traverse_data = round_floats(traverse_data)
 
             exchange_name = nameExchange(calculated_data1, traverse_data)
+
+            scaled_surplus_sum_raw = transfer_metadata.get("scaled_surplus_total", surplus_sum)
+            scaled_surplus_sum = round_floats(scaled_surplus_sum_raw)
+            scaled_total = round_floats(scaled_surplus_sum_raw + deficit_sum + traverse_amount)
+            if surplus_sum:
+                transfer_ratio = round(scaled_surplus_sum_raw / surplus_sum, 4)
+            else:
+                transfer_ratio = None
 
             db_data = {
                 "exchange_name": exchange_name,
@@ -307,7 +320,10 @@ def exchange():
                 "traverse_amount": traverse_amount,
                 "total": total,
                 "satisfiedA": satisfiedA,
-                "satisfiedB": satisfiedB
+                "satisfiedB": satisfiedB,
+                "scaled_surplus_sum": scaled_surplus_sum,
+                "transfer_ratio": transfer_ratio,
+                "scaled_total": scaled_total
             }
             # print()
             # print("DB Data:")
@@ -346,11 +362,14 @@ def exchange():
                                calculated_data1=calculated_data1, calculated_data2=calculated_data2, calculated_data3=calculated_data3,
                                comparison1=comparison[0], comparison2=comparison[1], comparison3=comparison[2],
                                traverse=traverse_data, total=total, traverse_tot=traverse_amount,
-                               satisfiedA=satisfiedA, satisfiedB=satisfiedB)
+                               satisfiedA=satisfiedA, satisfiedB=satisfiedB,
+                               scaled_surplus_sum=scaled_surplus_sum, transfer_ratio=transfer_ratio,
+                               scaled_total=scaled_total)
 
     return render_template('exchange.html', data=None,
                            past_exchange=past_exchange, files=files, traverse_files=traverse_files,
-                           surplus_sum=0, deficit_sum=0, traverse=0, total=0)
+                           surplus_sum=0, deficit_sum=0, traverse=0, total=0,
+                           scaled_surplus_sum=0, transfer_ratio=None, scaled_total=0)
 
 
 def nameExchange(calculated_data, selected_traverse):
@@ -463,17 +482,64 @@ def split_json_by_deficit_surplus(file_list, traverse_list, lambda_value):
     surplus = [positive_entries, sum_positive_ds, count_positive]
     deficit = [negative_entries, sum_negative_ds, count_negative]
 
-    # Check the sum of surplus is bigger then deficit
-    if surplus[1] >= abs(deficit[1]):
+    for entry in positive_entries:
+        entry["Data_scaled"] = entry.get("Data", 0)
+    for entry in negative_entries:
+        entry["Data_scaled"] = entry.get("Data", 0)
+
+    original_surplus_total = surplus[1]
+    deficit_magnitude = abs(deficit[1])
+    scaled_surplus_total = original_surplus_total
+    transfer_ratio = 1.0 if original_surplus_total else 0.0
+
+    if original_surplus_total >= deficit_magnitude:
+        if original_surplus_total > 0:
+            if deficit_magnitude == 0:
+                transfer_ratio = 0.0
+                scaled_surplus_total = 0
+                for entry in positive_entries:
+                    entry["Data_scaled"] = 0
+            elif original_surplus_total > deficit_magnitude:
+                transfer_ratio = deficit_magnitude / original_surplus_total
+                scaled_surplus_total = 0
+                for entry in positive_entries:
+                    scaled_value = entry["Data"] * transfer_ratio
+                    entry["Data_scaled"] = scaled_value
+                    scaled_surplus_total += scaled_value
+            else:
+                transfer_ratio = 1.0
+                scaled_surplus_total = original_surplus_total
+        else:
+            transfer_ratio = 0.0
+            scaled_surplus_total = 0
+
+        surplus[1] = scaled_surplus_total
+        transfer_metadata = {
+            "transfer_ratio": transfer_ratio,
+            "scaled_surplus_total": scaled_surplus_total,
+            "original_surplus_total": original_surplus_total,
+            "deficit_total": deficit[1]
+        }
         calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison = outflowA(
             surplus, deficit, lambda_value)
-    elif surplus[1] < abs(deficit[1]):
+        traverse_data = []
+    elif original_surplus_total < deficit_magnitude:
+        transfer_ratio = 1.0 if original_surplus_total else 0.0
+        scaled_surplus_total = original_surplus_total
+        transfer_metadata = {
+            "transfer_ratio": transfer_ratio,
+            "scaled_surplus_total": scaled_surplus_total,
+            "original_surplus_total": original_surplus_total,
+            "deficit_total": deficit[1]
+        }
         calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data = outflowB(
             surplus, deficit, lambda_value, traverse_list)
     else:
-        return [], [], []  # fallback in case something unexpected happens
+        return [], [], [], [], [], [], [], {}
 
-    return calculated_data1, satisfiedA,  calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data
+    transfer_metadata = round_floats(transfer_metadata)
+
+    return calculated_data1, satisfiedA,  calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data, transfer_metadata
 
 
 def outflowA(surplus, deficit, lambda_value):
@@ -523,8 +589,9 @@ def criteria_a1(surplus, deficit):
                     sum_surplus = sum(
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
                     )
+                    entry_value = entry.get("Data_scaled", json_data["D/S 1*"][11])
                     try:
-                        alpha_value = json_data["D/S 1*"][11] / sum_surplus
+                        alpha_value = entry_value / sum_surplus
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
@@ -567,11 +634,12 @@ def criteria_a1(surplus, deficit):
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
                     )
 
+                    entry_value = entry.get("Data_scaled", json_data["D/S 1*"][11])
                     try:
                         #alpha_value = abs(json_data["D/S 1*"][11] / deficit[1])
-                        # When using a wier, the defict should scale down to the 
+                        # When using a wier, the defict should scale down to the
                         # amount that is not supported by the weir itself
-                        alpha_value = abs(json_data["D/S 1*"][11] / deficit[1])
+                        alpha_value = abs(entry_value / deficit[1])
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
@@ -626,8 +694,9 @@ def criteria_a2(surplus, deficit):
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
                     )
 
+                    entry_value = entry.get("Data_scaled", json_data["D/S 1*"][11])
                     try:
-                        alpha_value = json_data["D/S 1*"][11] / sum_deficit
+                        alpha_value = entry_value / sum_deficit
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
@@ -675,8 +744,9 @@ def criteria_a2(surplus, deficit):
                     sum_surplus = sum(
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
                     )
+                    entry_value = entry.get("Data_scaled", json_data["D/S 1*"][11])
                     try:
-                        alpha_value = json_data["D/S 1*"][11] / surplus[1]
+                        alpha_value = entry_value / surplus[1]
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
@@ -740,8 +810,9 @@ def criterio_a3(surplus, deficit, lambda_value):
                     sum_surplus = sum(
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
                     )
+                    entry_value = entry.get("Data_scaled", json_data["D/S 1*"][11])
                     try:
-                        alpha_value = json_data["D/S 1*"][11] / sum_surplus
+                        alpha_value = entry_value / sum_surplus
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
                     # Store computed alpha value and the monthly computed values in the dictionary
@@ -776,8 +847,9 @@ def criterio_a3(surplus, deficit, lambda_value):
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
                     )
 
+                    entry_value = entry.get("Data_scaled", json_data["D/S 1*"][11])
                     try:
-                        alpha_value = json_data["D/S 1*"][11] / deficit[1]
+                        alpha_value = entry_value / deficit[1]
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
@@ -807,8 +879,9 @@ def criterio_a3(surplus, deficit, lambda_value):
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] < 0
                     )
 
+                    entry_value = entry.get("Data_scaled", json_data["D/S 1*"][11])
                     try:
-                        alpha_value = json_data["D/S 1*"][11] / sum_deficit
+                        alpha_value = entry_value / sum_deficit
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
@@ -844,8 +917,9 @@ def criterio_a3(surplus, deficit, lambda_value):
                     sum_surplus = sum(
                         json_data["D/S 1 j"][i] for i in range(12) if json_data["D/S 1 j"][i] > 0
                     )
+                    entry_value = entry.get("Data_scaled", json_data["D/S 1*"][11])
                     try:
-                        alpha_value = json_data["D/S 1*"][11] / surplus[1]
+                        alpha_value = entry_value / surplus[1]
                     except (IndexError, ZeroDivisionError):
                         alpha_value = 0
 
