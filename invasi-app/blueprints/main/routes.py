@@ -227,6 +227,7 @@ def exchange():
     surplus_sum = 0
     deficit_sum = 0
     total = 0
+    traverse_summary = None
     if request.method == 'POST':
         if 'load' in request.form:
             filename = request.form.get("past_select")
@@ -240,7 +241,8 @@ def exchange():
             surplus_sum = data["surplus_sum"]
             deficit_sum = data["deficit_sum"]
             total = data["total"]
-            traverse_data = data["traverse"]
+            traverse_data = data.get("traverse", [])
+            traverse_summary = data.get("traverse_summary")
             traverse_amount = data.get("traverse_amount", 0)
             data1 = data["data"]
             satisfiedA = data.get("satisfiedA", None)
@@ -253,6 +255,7 @@ def exchange():
                                    calculated_data3=calculated_data3, total=total,
                                    comparison1=comparison[0], comparison2=comparison[1], comparison3=comparison[2],
                                    traverse=traverse_data, traverse_tot=traverse_amount,
+                                   traverse_summary=traverse_summary,
                                    satisfiedA=satisfiedA, satisfiedB=satisfiedB)
         if 'delete' in request.form:
             filename = request.form.get("past_select")
@@ -286,11 +289,12 @@ def exchange():
             data, surplus_sum, deficit_sum, traverse_amount, total = calculate_exchange(
                 selected_files, selected_traverse)
 
-            calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data = split_json_by_deficit_surplus(
+            calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data, traverse_summary = split_json_by_deficit_surplus(
                 selected_files, selected_traverse, lambda_value)
             db_data = []
 
             traverse_data = round_floats(traverse_data)
+            traverse_summary = round_floats(traverse_summary) if traverse_summary is not None else None
 
             exchange_name = nameExchange(calculated_data1, traverse_data)
 
@@ -304,6 +308,7 @@ def exchange():
                 "surplus_sum": surplus_sum,
                 "deficit_sum": deficit_sum,
                 "traverse": traverse_data,  # review
+                "traverse_summary": traverse_summary,
                 "traverse_amount": traverse_amount,
                 "total": total,
                 "satisfiedA": satisfiedA,
@@ -346,11 +351,13 @@ def exchange():
                                calculated_data1=calculated_data1, calculated_data2=calculated_data2, calculated_data3=calculated_data3,
                                comparison1=comparison[0], comparison2=comparison[1], comparison3=comparison[2],
                                traverse=traverse_data, total=total, traverse_tot=traverse_amount,
+                               traverse_summary=traverse_summary,
                                satisfiedA=satisfiedA, satisfiedB=satisfiedB)
 
     return render_template('exchange.html', data=None,
                            past_exchange=past_exchange, files=files, traverse_files=traverse_files,
-                           surplus_sum=0, deficit_sum=0, traverse=0, total=0)
+                           surplus_sum=0, deficit_sum=0, traverse=0, total=0,
+                           traverse_summary=None)
 
 
 def nameExchange(calculated_data, selected_traverse):
@@ -433,6 +440,7 @@ def split_json_by_deficit_surplus(file_list, traverse_list, lambda_value):
     positive_entries = []
     negative_entries = []
     traverse_data = []
+    traverse_summary = None
     sum_positive_ds = 0
     sum_negative_ds = 0
     count_positive = 0
@@ -468,12 +476,12 @@ def split_json_by_deficit_surplus(file_list, traverse_list, lambda_value):
         calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison = outflowA(
             surplus, deficit, lambda_value)
     elif surplus[1] < abs(deficit[1]):
-        calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data = outflowB(
+        calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data, traverse_summary = outflowB(
             surplus, deficit, lambda_value, traverse_list)
     else:
-        return [], [], []  # fallback in case something unexpected happens
+        return [], None, [], None, [], [], [], None  # fallback in case something unexpected happens
 
-    return calculated_data1, satisfiedA,  calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data
+    return calculated_data1, satisfiedA,  calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data, traverse_summary
 
 
 def outflowA(surplus, deficit, lambda_value):
@@ -918,10 +926,9 @@ def outflowB(surplus, deficit, lambda_value, traverse_list):
     delta_p = 0
     delta_tot = abs(deficit[1]) - surplus[1]
     Datot = surplus[1]  # Deficit managed by the surplus
-    Dbtot = delta_tot  # Defict managed by the traverse
+    Dbtot = max(delta_tot, 0)  # Defict managed by the traverse
 
     print(f"Datot: {Datot}, Dbtot: {Dbtot}, delta_tot: {delta_tot}")
-    sufficient = False
     # print(traverse_list)
     for traverse in traverse_list:
         # Retrieve the traverse data
@@ -939,29 +946,24 @@ def outflowB(surplus, deficit, lambda_value, traverse_list):
 
     # print(f"Ptot: {Ptot}, Datot: {Datot}, Dbtot: {Dbtot}")
 
-    if Ptot >= Dbtot:
-        # print("Ptot > Dbtot")
-        delta_p = Dbtot  # Amount of surplus that can be covered by the traverse
-        sufficient = True
+    delta_p = min(Ptot, Dbtot)
+    if Dbtot > 0:
+        rho = max(0.0, min(Ptot / Dbtot, 1.0))
     else:
-        print("Ptot < Dbtot")
-        # delta_p = Ptot              #Amount of surplus that can be covered by the traverse
-        #delta_not = Dbtot - Ptot
-        delta_p = Dbtot - Ptot
+        rho = 0
 
-    try:
-        alpha5 = delta_p / Ptot
-    except ZeroDivisionError:
+    if Ptot > 0 and Dbtot > 0:
+        alpha5 = rho * (Dbtot / Ptot)
+    else:
         alpha5 = 0
+    alpha5 = max(0.0, min(alpha5, 1.0))
 
     for i in range(len(traverse_data)):
+        traverse_data[i]["delta_p_satisfied"] = delta_p
+        traverse_data[i]["rho"] = rho
         traverse_data[i]["delta_r"] = alpha5 * traverse_data[i]["P_util_tot"]
 
-        try:
-            alpha6 = traverse_data[i]["delta_r"] / \
-                traverse_data[i]["P_util_tot"]
-        except ZeroDivisionError:
-            alpha6 = 0
+        alpha6 = alpha5
 
         traverse_data[i]["delta_r_month"] = [0] * 12
         for j in range(12):
@@ -1000,4 +1002,11 @@ def outflowB(surplus, deficit, lambda_value, traverse_list):
     comparison.append(comparison2)
     comparison.append(comparison3)
 
-    return calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data
+    traverse_summary = {
+        "rho": rho,
+        "delta_p_satisfied": delta_p,
+        "delta_p_requested": Dbtot,
+        "available_volume": Ptot
+    }
+
+    return calculated_data1, satisfiedA, calculated_data2, satisfiedB, calculated_data3, comparison, traverse_data, traverse_summary

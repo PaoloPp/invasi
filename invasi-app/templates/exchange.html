@@ -236,6 +236,16 @@
             </tr>
           </tbody>
         </table>
+
+        {% if traverse_summary %}
+        <div class="alert alert-info mt-3" role="alert">
+          <strong>Copertura traverse esterne:</strong>
+          <span class="ms-3">Quota soddisfatta Δ′: {{ traverse_summary.delta_p_satisfied }}</span>
+          <span class="ms-3">Quota richiesta Δ′: {{ traverse_summary.delta_p_requested }}</span>
+          <span class="ms-3">Volume disponibile traversa: {{ traverse_summary.available_volume }}</span>
+          <span class="ms-3">Quota soddisfatta (%): {{ (traverse_summary.rho * 100) | round(2) if traverse_summary.rho is not none else 'N/A' }}%</span>
+        </div>
+        {% endif %}
       </div>
 
       {% if calculated_data1 or calculated_data2 or calculated_data3 %}
