@@ -7,7 +7,6 @@
   <title>ModIn</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    /* Ensures all columns are the same width */
     .table-fixed {
       table-layout: fixed;
       width: 100%;
@@ -59,7 +58,6 @@
       cursor: pointer;
     }
 
-    /* Add to your existing style section */
     @media print {
       body * {
         visibility: hidden;
@@ -98,17 +96,17 @@
 
   <div class="container mt-5">
     <h1>Modin Exchange</h1>
-    <!-- Selected Values Display -->
+
     <div id="selected-values" class="selected-values">
       <strong>Invasi selezionati:</strong> <em>None</em>
     </div>
     <div id="selected-traverse" class="selected-values">
       <strong>Traverse selezionate:</strong> <em>None</em>
     </div>
-    <form id="damns_select" method="POST">
-      <div class="d-flex align-items-center gap-2"> <!-- Bootstrap flex container with spacing -->
 
-        <!-- Selected files display -->
+    <form id="damns_select" method="POST">
+      <div class="d-flex align-items-center gap-2">
+        <!-- Invasi -->
         <div class="dropdown">
           <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton"
             data-bs-toggle="dropdown" aria-expanded="false">
@@ -125,7 +123,7 @@
           </ul>
         </div>
 
-        <!-- Traverse Dropdown -->
+        <!-- Traverse -->
         <div class="dropdown" id="dropdown-container-traverse">
           <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonTraverse"
             data-bs-toggle="dropdown" aria-expanded="false">
@@ -143,21 +141,18 @@
           </ul>
         </div>
 
-        <!-- Lambda label -->
+        <!-- Parametri legacy ancora presenti nel form -->
         <span>Lambda: </span>
-
-        <!-- Lambda input -->
         <input type="text" inputmode="decimal" id="lambda" class="numeric-input" name="lambda" class="form-control"
           placeholder="Lambda" required style="width: 120px;">
 
-        <!-- Submit button -->
         <button type="submit" class="btn btn-primary">Inizia elaborazione</button>
         <button onclick="printSection()" class="btn btn-primary no-print">Salva come PDF</button>
-
       </div>
     </form>
 
     <br>
+
     <form id="past_select" method="POST">
       <select class="form-select" id="past_select" name="past_select" required>
         <option value="">-- Seleziona un bilanciamento --</option>
@@ -172,45 +167,69 @@
       </div>
     </form>
   </div>
+
   {% if filename %}
   <div class="mt-3 text-center">
     <h4 id="filename">Filename: {{ filename }}</h4>
   </div>
   {% endif %}
+
   <div id="printableArea">
     <div class="container mt-5">
       <div class="container mt-5 table-responsive">
-        <!-- Table for File Data -->
+
+        <!-- Riepilogo invasi (nuovo formato) -->
+        {# === RIEPILOGO INVASI con ruolo preso dai risultati (finale -> c1 -> c2) === #}
+        {% set donors_f = (calculated_data3 or {}).get('donors', {}) %}
+        {% set receiv_f = (calculated_data3 or {}).get('receivers', {}) %}
+        {% if not donors_f and not receiv_f %}
+        {% set donors_f = (calculated_data1 or {}).get('donors', {}) %}
+        {% set receiv_f = (calculated_data1 or {}).get('receivers', {}) %}
+        {% endif %}
+        {% if not donors_f and not receiv_f %}
+        {% set donors_f = (calculated_data2 or {}).get('donors', {}) %}
+        {% set receiv_f = (calculated_data2 or {}).get('receivers', {}) %}
+        {% endif %}
+
         <table class="table table-bordered table-striped table-fixed">
           <thead>
             <tr>
-              <th rowspan="2">Invaso</th>
-              <th rowspan="2">Condizione idrologica</th>
-              <th colspan="2">Caso 1 (Winv tot)</th>
-              <th colspan="2">Caso 2 (Winv aut)</th>
-            </tr>
-            <tr>
-              <th>S/D<br>(Mm³)</th>
-              <th>Sf<br>(Mm³)</th>
-              <th>S/D<br>(Mm³)</th>
-              <th>Sf<br>(Mm³)</th>
+              <th>Invaso</th>
+              <th>Ruolo</th>
+              <th>Surplus netto S (Mm³)</th>
+              <th>Deficit netto D (Mm³)</th>
             </tr>
           </thead>
           <tbody>
-            {% for key, file in (data or {}).items() %}
+            {% if data is mapping %}
+            {% for key, file in data.items() %}
+            {% set name = key %}
+            {% if name in donors_f.keys() %}
+            {% set ruolo = 'Donatore' %}
+            {% set Snet = donors_f[name].get('S_prime', donors_f[name].get('S_net', 0)) %}
+            {% set Dnet = 0 %}
+            {% elif name in receiv_f.keys() %}
+            {% set ruolo = 'Ricevente' %}
+            {% set Snet = 0 %}
+            {% set Dnet = receiv_f[name].get('D_net', receiv_f[name].get('A_s', 0)) %}
+            {% else %}
+            {% set ruolo = '—' %}
+            {% set Snet = file.get('S_net', 0) %}
+            {% set Dnet = file.get('D_net', 0) %}
+            {% endif %}
             <tr>
-              <td><b>{{ key }}</b></td> <!-- For example, 'Conza 0', 'Conza 1', etc. -->
-              <td>Media</td>
-              <td>{{ file['D/S 1 yearly'] }}</td>
-              <td>{{ file['Sf 1 yearly'] }}</td>
-              <td>{{ file['D/S 2 yearly'] }}</td>
-              <td>{{ file['Sf 2 yearly'] }}</td>
+              <td><b>{{ name }}</b></td>
+              <td>{{ ruolo }}</td>
+              <td>{{ '%.2f'|format((Snet or 0)|float) }}</td>
+              <td>{{ '%.2f'|format((Dnet or 0)|float) }}</td>
             </tr>
             {% endfor %}
+            {% endif %}
           </tbody>
         </table>
 
-        <!-- Table for Overall Summary -->
+
+        <!-- Sommario complessivo -->
         <table class="table table-bordered table-striped table-fixed mt-4">
           <thead>
             <tr>
@@ -219,20 +238,17 @@
             <tr>
               <th></th>
               <th>Invasi</th>
-              <th>Disponibilità traversa SV<br>(Mm³)</th>
-              <th>Totale<br>(Mm³)</th>
+              <th>Disponibilità traversa SV (Mm³)</th>
+              <th>Totale (Mm³)</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="row-label">Surplus<br>(Mm³)</td>
-              <td>{{ surplus_sum }}</td>
-              <td rowspan="2" style="vertical-align: middle">{{ traverse_tot }}</td>
-              <td rowspan="2" class="highlight" style="vertical-align: middle">{{ total }}</td>
-            </tr>
-            <tr>
-              <td class="row-label">Deficit<br>(Mm³)</td>
-              <td>{{ deficit_sum }}</td>
+              <td class="row-label">Surplus (Mm³)</td>
+              <td>{{ '%.2f'|format(surplus_sum|float) }}</td>
+              <td rowspan="2" style="vertical-align: middle">{{ '%.2f'|format(traverse_tot|float) }}</td>
+              <td rowspan="2" class="highlight" style="vertical-align: middle">{{ '%.2f'|format(total|float) }}</td>
+              <td>{{ '%.2f'|format(deficit_sum|float) }}</td>
             </tr>
           </tbody>
         </table>
@@ -256,336 +272,245 @@
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="criterio3-tab" data-bs-toggle="tab" data-bs-target="#criterio3" type="button"
               role="tab" aria-controls="criterio3" aria-selected="false">
-              Criterio 3
+              Finale
             </button>
           </li>
         </ul>
 
+        {% set months = ["Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"] %}
+
         <div class="tab-content" id="dataTabsContent">
+          <!-- ================= Criterio 1 ================= -->
           <div class="tab-pane fade show active" id="criterio1" role="tabpanel" aria-labelledby="criterio1-tab">
+            {% if calculated_data1 %}
+            {% set model1 = calculated_data1.get('model','?') %}
+            {% set ed_tot_c1 = 0 %}
+            {% for d in calculated_data1.get('donors', {}).values() %}
+            {% set ed_tot_c1 = ed_tot_c1 + (d.get('S_prime',0)) %}
+            {% endfor %}
             <table class="table table-bordered table-striped table-fixed">
               <thead>
                 <tr>
-                  <th rowspan="2">Invaso</th>
-                  <th rowspan="2">Alpha Surplus</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 1 - Cond. Soddisfatte: {{ satisfiedA }}</th>
-                  <!--<th colspan="12">Trasferimenti mensili (Mm³) - Criterio 1 - Ed<sub>j</sub> tot: {{ calculated_data1[-1]['Edj tot'] }} - Cond. Soddisfatte: {{ satisfiedA }}</th>-->
+                  <th colspan="13">
+                    {% set m1 = calculated_data1.get('model','?') %}
+                    {% if m1 is mapping and 'criterion' in m1 %}
+                    Modello A — Criterio {{ m1['criterion'] }}{% if m1.get('weights_desc') %} — {{ m1['weights_desc']
+                    }}{% endif %}
+                    {% elif m1 is mapping and 'variante' in m1 %}
+                    Modello B — Variante {{ m1['variante'] }}{% if m1.get('weights_desc') %} — {{ m1['weights_desc']
+                    }}{% endif %}
+                    {% else %}
+                    Modello A — Criterio 1
+                    {% endif %}
+                    — Trasferimenti mensili (Mm³) — Erogato totale dai donanti (annuo): {{ '%.2f'|format(ed_tot_c1) }} —
+                    Cond. Soddisfatte: {{ satisfiedA }}
+                  </th>
+
                 </tr>
                 <tr>
-                  {% set months = [
-                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
-                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
-                  ] %}
-                  {% for i in range(0, 12) %}
-                  <th style="font-size: small;">{{ months[i] }}</th>
-                  {% endfor %}
+                  <th>Donatore</th>
+                  {% for m in months %}<th style="font-size: small;">{{ m }}</th>{% endfor %}
                 </tr>
               </thead>
               <tbody>
-                {% for item in calculated_data1 %}
-                {% if item["alpha_surplus"] %}
-                <tr>
-                  <td>{{ item["Filename"] }}</td>
-                  <td>{{ item["alpha"] }}</td>
-                  {% for value in item["alpha_surplus"] %}
-                  <td>{{ value }}</td>
+                {% for name, d in calculated_data1.get('donors', {}).items() %}
+                {# S_prime serve per normalizzare i pesi; fallback a S_net se manca #}
+                {% set Sprime = (d.get('S_prime', d.get('S_net', 0.0)) or 0.0) %}
+                {# Riga pesi per questo invaso (prima dei contributi) #}
+                <tr class="table-secondary">
+                  <td style="font-style: italic;">Pesi {{ name }}</td>
+                  {% for v in d.get('Esj', [0]*12) %}
+                  {% set w = ( (v / Sprime) if Sprime > 0 else 0.0 ) %}
+                  <td>{{ '%.2f'|format(w) }}</td>
                   {% endfor %}
                 </tr>
-                {% endif %}
-                {% endfor %}
-                <!--Add the traverse in the table if present-->
-                {% if traverse %}
-                {% for item in traverse %}
+                {# Riga contributi mensili (come prima) #}
                 <tr>
-                  <td>{{ item["Filename"] }}</td>
-                  <td> </td>
-                  {% for value in item["delta_r_month"] %}
-                  <td>{{ value }}</td>
+                  <td>{{ name }}</td>
+                  {% for v in d.get('Esj', [0]*12) %}
+                  <td>{{ '%.2f'|format(v) }}</td>
                   {% endfor %}
                 </tr>
                 {% endfor %}
-                {% endif %}
               </tbody>
+
             </table>
 
             <table class="table table-bordered table-striped table-fixed">
               <thead>
                 <tr>
-                  <th rowspan="2">Invaso</th>
-                  <th rowspan="2">Alpha Deficit</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 1</th>
-                </tr>
-                <tr>
-                  {% set months = [
-                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
-                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
-                  ] %}
-                  {% for i in range(0, 12) %}
-                  <th style="font-size: small;">{{ months[i] }}</th>
-                  {% endfor %}
+                  <th>Ricevente</th>
+                  {% for m in months %}<th style="font-size: small;">{{ m }}</th>{% endfor %}
                 </tr>
               </thead>
               <tbody>
-                {% for item in calculated_data1 %}
-                {% if item["alpha_deficit"] %}
+                {% for name, r in calculated_data1.get('receivers', {}).items() %}
                 <tr>
-                  <td>{{ item["Filename"] }}</td>
-                  <td>{{ item["alpha"] }}</td>
-                  {% for value in item["alpha_deficit"] %}
-                  <td>{{ value }}</td>
+                  <td>{{ name }}</td>
+                  {% set series = r.get('A_total_sj', r.get('A_sj', [0]*12)) %}
+                  {% for v in series %}
+                  <td>{{ '%.2f'|format(v) }}</td>
                   {% endfor %}
-                </tr>
-                {% endif %}
-                {% endfor %}
-              </tbody>
-            </table>
-
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-              <thead>
-                <tr>
-                  <th rowspan="2" colspan="2">Invaso</th>
-                  <th colspan="16">Comparazione tra Deficit/Surplus (Mm³)</th>
-                </tr>
-                <tr>
-                  <th colspan="4">D/S 1 pre-elaborazione</th>
-                  <th colspan="4">D/S 1 post-elaborazione</th>
-                  <th colspan="4">D/S 2 pre-elaborazione</th>
-                  <th colspan="4">D/S 2 post-elaborazione</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in comparison1 %}
-                <tr>
-                  <td colspan="2">{{ item["Filename"] }}</td>
-                  <td colspan="4">{{ item["D/S 1*"] }}</td>
-                  <td colspan="4">{{ item["D/S 1* post"] }}</td>
-                  <td colspan="4">{{ item["D/S 2*"] }}</td>
-                  <td colspan="4">{{ item["D/S 2* post"] }}</td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
+            {% endif %}
           </div>
 
+          <!-- ================= Criterio 2 ================= -->
           <div class="tab-pane fade" id="criterio2" role="tabpanel" aria-labelledby="criterio2-tab">
+            {% if calculated_data2 %}
+            {% set model2 = calculated_data2.get('model','?') %}
+            {% set ed_tot_c2 = 0 %}
+            {% for d in calculated_data2.get('donors', {}).values() %}
+            {% set ed_tot_c2 = ed_tot_c2 + (d.get('S_prime',0)) %}
+            {% endfor %}
             <table class="table table-bordered table-striped table-fixed">
               <thead>
                 <tr>
-                  <th rowspan="2">Invaso</th>
-                  <th rowspan="2">Alpha Surplus</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2 - Cond. Soddisfatte: {{ satisfiedB }}</th>
+                  <th colspan="13">
+                    {% set m2 = calculated_data2.get('model','?') %}
+                    {% if m2 is mapping and 'criterion' in m2 %}
+                    Modello A — Criterio {{ m2['criterion'] }}{% if m2.get('weights_desc') %} — {{ m2['weights_desc']
+                    }}{% endif %}
+                    {% elif m2 is mapping and 'variante' in m2 %}
+                    Modello B — Variante {{ m2['variante'] }}{% if m2.get('weights_desc') %} — {{ m2['weights_desc']
+                    }}{% endif %}
+                    {% else %}
+                    Modello A — Criterio 1
+                    {% endif %}
+                    — Trasferimenti mensili (Mm³) — Erogato totale dai donanti (annuo): {{ '%.2f'|format(ed_tot_c1) }} —
+                    Cond. Soddisfatte: {{ satisfiedA }}
+                  </th>
                 </tr>
                 <tr>
-                  {% set months = [
-                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
-                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
-                  ] %}
-                  {% for i in range(0, 12) %}
-                  <th style="font-size: small;">{{ months[i] }}</th>
-                  {% endfor %}
+                  <th>Donatore</th>
+                  {% for m in months %}<th style="font-size: small;">{{ m }}</th>{% endfor %}
                 </tr>
               </thead>
               <tbody>
-                {% for item in calculated_data2 %}
-                {% if item["alpha_surplus"] %}
-                <tr>
-                  <td>{{ item["Filename"] }}</td>
-                  <td>{{ item["alpha"] }}</td>
-                  {% for value in item["alpha_surplus"] %}
-                  <td>{{ value }}</td>
+                {% for name, d in calculated_data2.get('donors', {}).items() %}
+                {# S_prime serve per normalizzare i pesi; fallback a S_net se manca #}
+                {% set Sprime = (d.get('S_prime', d.get('S_net', 0.0)) or 0.0) %}
+                {# Riga pesi per questo invaso (prima dei contributi) #}
+                <tr class="table-secondary">
+                  <td style="font-style: italic;">Pesi {{ name }}</td>
+                  {% for v in d.get('Esj', [0]*12) %}
+                  {% set w = ( (v / Sprime) if Sprime > 0 else 0.0 ) %}
+                  <td>{{ '%.2f'|format(w) }}</td>
                   {% endfor %}
-
                 </tr>
-                {% endif %}
-                {% endfor %}
-                <!--Add the traverse in the table if present-->
-                {% if traverse %}
-                {% for item in traverse %}
+                {# Riga contributi mensili (come prima) #}
                 <tr>
-                  <td>{{ item["Filename"] }}</td>
-                  <td> </td>
-                  {% for value in item["delta_r_month"] %}
-                  <td>{{ value }}</td>
+                  <td>{{ name }}</td>
+                  {% for v in d.get('Esj', [0]*12) %}
+                  <td>{{ '%.2f'|format(v) }}</td>
                   {% endfor %}
                 </tr>
                 {% endfor %}
-                {% endif %}
               </tbody>
+
             </table>
 
             <table class="table table-bordered table-striped table-fixed">
               <thead>
                 <tr>
-                  <th rowspan="2">Invaso</th>
-                  <th rowspan="2">Alpha Deficit</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2</th>
-                  <!--<th colspan="12">Trasferimenti mensili (Mm³) - Criterio 2 - Ad<sub>j</sub> tot: {{ calculated_data2[-1]['Adj tot'] }}</th>-->
-                </tr>
-                <tr>
-                  {% set months = [
-                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
-                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
-                  ] %}
-                  {% for i in range(0, 12) %}
-                  <th style="font-size: small;">{{ months[i] }}</th>
-                  {% endfor %}
+                  <th>Ricevente</th>
+                  {% for m in months %}<th style="font-size: small;">{{ m }}</th>{% endfor %}
                 </tr>
               </thead>
               <tbody>
-                {% for item in calculated_data2 %}
-                {% if item["alpha_deficit"] %}
+                {% for name, r in calculated_data2.get('receivers', {}).items() %}
                 <tr>
-                  <td>{{ item["Filename"] }}</td>
-                  <td>{{ item["alpha"] }}</td>
-                  {% for value in item["alpha_deficit"] %}
-                  <td>{{ value }}</td>
+                  <td>{{ name }}</td>
+                  {% set series = r.get('A_total_sj', r.get('A_sj', [0]*12)) %}
+                  {% for v in series %}
+                  <td>{{ '%.2f'|format(v) }}</td>
                   {% endfor %}
-                </tr>
-                {% endif %}
-                {% endfor %}
-              </tbody>
-            </table>
-
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-              <thead>
-                <tr>
-                  <th rowspan="2" colspan="2">Invaso</th>
-                  <th colspan="16">Comparazione tra Deficit/Surplus (Mm³)</th>
-                </tr>
-                <tr>
-                  <th colspan="4">D/S 1 pre-elaborazione</th>
-                  <th colspan="4">D/S 1 post-elaborazione</th>
-                  <th colspan="4">D/S 2 pre-elaborazione</th>
-                  <th colspan="4">D/S 2 post-elaborazione</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in comparison2 %}
-                <tr>
-                  <td colspan="2">{{ item["Filename"] }}</td>
-                  <td colspan="4">{{ item["D/S 1*"] }}</td>
-                  <td colspan="4">{{ item["D/S 1* post"] }}</td>
-                  <td colspan="4">{{ item["D/S 2*"] }}</td>
-                  <td colspan="4">{{ item["D/S 2* post"] }}</td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
+            {% endif %}
           </div>
 
+          <!-- ================= Finale (criterio scelto) ================= -->
           <div class="tab-pane fade" id="criterio3" role="tabpanel" aria-labelledby="criterio3-tab">
+            {% if calculated_data3 %}
+            {% set model3 = calculated_data3.get('model','?') %}
+            {% set ed_tot_c3 = 0 %}
+            {% for d in calculated_data3.get('donors', {}).values() %}
+            {% set ed_tot_c3 = ed_tot_c3 + (d.get('S_prime',0)) %}
+            {% endfor %}
             <table class="table table-bordered table-striped table-fixed">
               <thead>
                 <tr>
-                  <th rowspan="2">Invaso</th>
-                  <th rowspan="2">Alpha Surplus</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3</th>
-                  <!--<th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3 - Ed<sub>j</sub> tot: {{ calculated_data3[-1]['Edj tot'] }}</th>-->
+                  <th colspan="13">
+                    {% set m3 = calculated_data3.get('model','?') %}
+                    {% if m3 is mapping and 'criterion' in m3 %}
+                    Modello A — Criterio {{ m3['criterion'] }}{% if m3.get('weights_desc') %} — {{ m3['weights_desc']
+                    }}{% endif %}
+                    {% elif m3 is mapping and 'variante' in m3 %}
+                    Modello B — Variante {{ m3['variante'] }}{% if m3.get('weights_desc') %} — {{ m3['weights_desc']
+                    }}{% endif %}
+                    {% else %}
+                    Modello A — Criterio 1
+                    {% endif %}
+                    — Trasferimenti mensili (Mm³) — Erogato totale dai donanti (annuo): {{ '%.2f'|format(ed_tot_c3) }} —
+                    Cond. Soddisfatte: {{ satisfiedA }}
+                  </th>
                 </tr>
                 <tr>
-                  {% set months = [
-                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
-                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
-                  ] %}
-                  {% for i in range(0, 12) %}
-                  <th style="font-size: small;">{{ months[i] }}</th>
-                  {% endfor %}
+                  <th>Donatore</th>
+                  {% for m in months %}<th style="font-size: small;">{{ m }}</th>{% endfor %}
                 </tr>
               </thead>
               <tbody>
-                {% for item in calculated_data3 %}
-                {% if item["alpha_surplus"] %}
-                <tr>
-                  <td>{{ item["Filename"] }}</td>
-                  <td>{{ item["alpha"] }}</td>
-                  {% for value in item["alpha_surplus"] %}
-                  <td>{{ value }}</td>
+                {% for name, d in calculated_data3.get('donors', {}).items() %}
+                {# S_prime serve per normalizzare i pesi; fallback a S_net se manca #}
+                {% set Sprime = (d.get('S_prime', d.get('S_net', 0.0)) or 0.0) %}
+                {# Riga pesi per questo invaso (prima dei contributi) #}
+                <tr class="table-secondary">
+                  <td style="font-style: italic;">Pesi {{ name }}</td>
+                  {% for v in d.get('Esj', [0]*12) %}
+                  {% set w = ( (v / Sprime) if Sprime > 0 else 0.0 ) %}
+                  <td>{{ '%.2f'|format(w) }}</td>
                   {% endfor %}
                 </tr>
-                {% endif %}
-                {% endfor %}
-                <!--Add the traverse in the table if present-->
-                {% if traverse %}
-                {% for item in traverse %}
+                {# Riga contributi mensili (come prima) #}
                 <tr>
-                  <td>{{ item["Filename"] }}</td>
-                  <td> </td>
-                  {% for value in item["delta_r_month"] %}
-                  <td>{{ value }}</td>
+                  <td>{{ name }}</td>
+                  {% for v in d.get('Esj', [0]*12) %}
+                  <td>{{ '%.2f'|format(v) }}</td>
                   {% endfor %}
                 </tr>
                 {% endfor %}
-                {% endif %}
               </tbody>
+
             </table>
 
             <table class="table table-bordered table-striped table-fixed">
               <thead>
                 <tr>
-                  <th rowspan="2">Invaso</th>
-                  <th rowspan="2">Alpha Deficit</th>
-                  <th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3</th>
-                  <!--<th colspan="12">Trasferimenti mensili (Mm³) - Criterio 3 - Ad<sub>j</sub> tot: {{ calculated_data3[-1]['Adj tot'] }}</th>-->
-                </tr>
-                <tr>
-                  {% set months = [
-                  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
-                  "Apr", "May", "Jun", "Jul", "Aug", "Sep"
-                  ] %}
-                  {% for i in range(0, 12) %}
-                  <th style="font-size: small;">{{ months[i] }}</th>
-                  {% endfor %}
+                  <th>Ricevente</th>
+                  {% for m in months %}<th style="font-size: small;">{{ m }}</th>{% endfor %}
                 </tr>
               </thead>
               <tbody>
-                {% for item in calculated_data3 %}
-                {% if item["alpha_deficit"] %}
+                {% for name, r in calculated_data3.get('receivers', {}).items() %}
                 <tr>
-                  <td>{{ item["Filename"] }}</td>
-                  <td>{{ item["alpha"] }}</td>
-                  {% for value in item["alpha_deficit"] %}
-                  <td>{{ value }}</td>
+                  <td>{{ name }}</td>
+                  {% set series = r.get('A_total_sj', r.get('A_sj', [0]*12)) %}
+                  {% for v in series %}
+                  <td>{{ '%.2f'|format(v) }}</td>
                   {% endfor %}
-                </tr>
-                {% endif %}
-                {% endfor %}
-                
-              </tbody>
-            </table>
-
-            <br>
-
-            <table class="table table-bordered table-striped table-fixed">
-              <thead>
-                <tr>
-                  <th rowspan="2" colspan="2">Invaso</th>
-                  <th colspan="16">Comparazione tra Deficit/Surplus (Mm³)</th>
-                </tr>
-                <tr>
-                  <th colspan="4">D/S 1 pre-elaborazione</th>
-                  <th colspan="4">D/S 1 post-elaborazione</th>
-                  <th colspan="4">D/S 2 pre-elaborazione</th>
-                  <th colspan="4">D/S 2 post-elaborazione</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in comparison3 %}
-                <tr>
-                  <td colspan="2">{{ item["Filename"] }}</td>
-                  <td colspan="4">{{ item["D/S 1*"] }}</td>
-                  <td colspan="4">{{ item["D/S 1* post"] }}</td>
-                  <td colspan="4">{{ item["D/S 2*"] }}</td>
-                  <td colspan="4">{{ item["D/S 2* post"] }}</td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
+            {% endif %}
           </div>
-
         </div>
       </div>
       {% endif %}
@@ -597,15 +522,10 @@
       // Invasi Dropdown Handling
       const invasiCheckboxes = document.querySelectorAll('.option-checkbox');
       const selectedInvasiContainer = document.getElementById('selected-values');
-
       invasiCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', () => {
-          const selected = Array.from(invasiCheckboxes)
-            .filter(cb => cb.checked)
-            .map(cb => cb.value);
-
+          const selected = Array.from(invasiCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
           selectedInvasiContainer.innerHTML = `<strong>Invasi selezionati:</strong> `;
-
           if (selected.length === 0) {
             selectedInvasiContainer.innerHTML += `<em>None</em>`;
           } else {
@@ -621,15 +541,10 @@
       // Traverse Dropdown Handling
       const traverseCheckboxes = document.querySelectorAll('.option-checkbox-traverse');
       const selectedTraverseContainer = document.getElementById('selected-traverse');
-
       traverseCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', () => {
-          const selected = Array.from(traverseCheckboxes)
-            .filter(cb => cb.checked)
-            .map(cb => cb.value);
-
+          const selected = Array.from(traverseCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
           selectedTraverseContainer.innerHTML = `<strong>Traverse selezionate:</strong> `;
-
           if (selected.length === 0) {
             selectedTraverseContainer.innerHTML += `<em>None</em>`;
           } else {
@@ -643,151 +558,58 @@
       });
     </script>
 
-
     <script>
-      // Select all inputs with the 'numeric-input' class
+      // normalizza separatore decimale
       const numericInputs = document.querySelectorAll('.numeric-input');
-
       numericInputs.forEach(input => {
-        // Event listener for each input in the collection
-        input.addEventListener('input', function () {
-          this.value = this.value.replace(/,/g, '.');  // Replace commas with dots on input
-        });
-
-        // Additional listener to handle pasted text with commas
+        input.addEventListener('input', function () { this.value = this.value.replace(/,/g, '.'); });
         input.addEventListener('paste', function (event) {
-          event.preventDefault();  // Prevent default paste
+          event.preventDefault();
           const pastedText = event.clipboardData.getData('text');
           const formattedText = pastedText.replace(/,/g, '.');
-          document.execCommand('insertText', false, formattedText);  // Insert formatted text
+          document.execCommand('insertText', false, formattedText);
         });
       });
     </script>
 
     <script>
       function printSection() {
-        // Get the printable area
         const printContents = document.getElementById("printableArea").innerHTML;
-        // Get filename from the rendered <h4 id="filename"> element
         const filenameText = document.getElementById("filename")?.textContent || "Filename: N/A";
         const filename = filenameText.replace("Filename: ", "").trim();
-
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank');
-
-        // Write the printable content with optimized print styles
-        printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Exchange Report</title>
-        <style>
-          @page {
-            size: A4 landscape;
-            margin: 5mm;
-          }
-          body {
-            font-family: Arial, sans-serif;
-            font-size: 9pt;
-            padding: 10px;
-            line-height: 1.2;
-          }
-          table {
-            width: 100%;
-            table-layout: auto;
-            border-collapse: collapse;
-            border: 1px solid #000;
-            margin-bottom: 15px;
-            page-break-inside: avoid;
-          }
-          th, td {
-            padding: 3px;
-            border: 1px solid #000;
-            text-align: center;
-            vertical-align: middle;
-            word-wrap: break-word;
-          }
-          th {
-            background-color: #f0f0f0;
-            font-weight: bold;
-          }
-          .table-fixed {
-            table-layout: fixed;
-          }
-          h1, h2 {
-            text-align: center;
-            margin: 10px 0;
-          }
-          /* Ensure tables don't break across pages */
-          tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
-          }
-          /* Show all tab content in print */
-          .tab-pane {
-            display: block !important;
-            opacity: 1 !important;
-          }
-          .nav-tabs {
-            display: none;
-          }
-          /* Monthly columns styling */
-          .month-column {
-            width: 5.5%;
-            font-size: 8pt;
-          }
-          /* Main columns styling */
-          .main-column {
-            width: 12%;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>Exchange Report</h1>
-        <h1>Invasi: ${filename}</h1>
-        ${printContents}
-        <script>
-          // Function to apply column classes
-          function applyColumnClasses() {
-            // Apply classes to monthly columns
-            const monthHeaders = document.querySelectorAll('th:not([rowspan]):not([colspan])');
-            monthHeaders.forEach((th, index) => {
-              if (index >= 2) { // Assuming first 2 columns are not months
-                th.classList.add('month-column');
-              } else {
-                th.classList.add('main-column');
-              }
-            });
-            
-            // Apply classes to data cells
-            document.querySelectorAll('td').forEach(td => {
-              if (!td.hasAttribute('rowspan') && !td.hasAttribute('colspan')) {
-                const index = Array.from(td.parentNode.children).indexOf(td);
-                if (index >= 2) {
-                  td.classList.add('month-column');
-                } else {
-                  td.classList.add('main-column');
-                }
-              }
-            });
-          }
-          
-          // Wait for the document to be fully ready
-          document.addEventListener('DOMContentLoaded', function() {
-            applyColumnClasses();
-            
-            // Add a small delay to ensure rendering is complete
-            setTimeout(function() {
-              window.print();
-              window.close();
-            }, 1000);
-          });
-        <\/script>
-      </body>
-      </html>
-    `);
-
-        printWindow.document.close();
+        const w = window.open('', '_blank');
+        w.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Exchange Report</title>
+  <style>
+    @page { size: A4 landscape; margin: 5mm; }
+    body { font-family: Arial, sans-serif; font-size: 9pt; padding: 10px; line-height: 1.2; }
+    table { width: 100%; table-layout: auto; border-collapse: collapse; border: 1px solid #000; margin-bottom: 15px; page-break-inside: avoid; }
+    th, td { padding: 3px; border: 1px solid #000; text-align: center; vertical-align: middle; word-wrap: break-word; }
+    th { background-color: #f0f0f0; font-weight: bold; }
+    .table-fixed { table-layout: fixed; }
+    h1, h2 { text-align: center; margin: 10px 0; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    .tab-pane { display: block !important; opacity: 1 !important; }
+    .nav-tabs { display: none; }
+    .month-column { width: 5.5%; font-size: 8pt; }
+    .main-column { width: 12%; }
+  </style>
+</head>
+<body>
+  <h1>Exchange Report</h1>
+  <h1>Invasi: ${filename}</h1>
+  ${printContents}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() { window.print(); window.close(); }, 500);
+    });
+  <\/script>
+</body>
+</html>`);
+        w.document.close();
       }
     </script>
 </body>

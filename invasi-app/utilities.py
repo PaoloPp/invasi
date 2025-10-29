@@ -4,10 +4,16 @@ from models import JsonFile, User, PastExchange, JsonFileTraverse
 from flask_login import current_user
 from sqlalchemy import select, union
 from sqlalchemy.exc import SQLAlchemyError
+from flask import flash
 
 import matplotlib.pyplot as plt
 import os
 import json
+
+MONTHS_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno",
+             "Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"]
+MONTHS_EN = ["January","February","March","April","May","June",
+             "July","August","September","October","November","December"]
 
 def check_entry_existance(_filename, _current_user, _table):
     existing_file = db.session.execute(
@@ -480,3 +486,136 @@ def exchange_comparison(calculated_data, case_id):
         db.session.rollback()
         print(f"Error updating json_data with alpha values: {e}")
     return comparison
+
+def load_json_data(filename):
+    """
+    Helper to load and parse JSON data.
+    Returns a dict on success, or None (with a flash message) on failure.
+    """
+    try:
+        json_data = get_json(filename)
+        return json.loads(json_data)
+    except json.JSONDecodeError as e:
+        flash(f"Error parsing JSON from {filename}: {e}", "danger")
+        return None
+    
+def load_json_data_traverse(filename):
+    """
+    Helper to load and parse JSON data.
+    Returns a dict on success, or None (with a flash message) on failure.
+    """
+    try:
+        json_data = get_json_traverse(filename)
+        return json.loads(json_data)
+    except json.JSONDecodeError as e:
+        flash(f"Error parsing JSON from {filename}: {e}", "danger")
+        return None
+
+
+def load_past_json_data(filename):
+    """
+    Helper to load and parse JSON data.
+    Returns a dict on success, or None (with a flash message) on failure.
+    """
+    try:
+        json_data = get_past_json(filename)
+        return json.loads(json_data)
+    except json.JSONDecodeError as e:
+        flash(f"Error parsing JSON from {filename}: {e}", "danger")
+        return None
+    
+def nameExchange(calculated_data, selected_traverse):
+    """
+    Genera un nome stabile per l'exchange usando:
+      - i nomi dei donatori e dei riceventi da 'calculated_data'
+      - eventuali nomi delle traverse in 'selected_traverse'
+    Compatibile con:
+      - nuovo formato: dict con keys 'donors' e 'receivers' (entrambi dict {name: {...}})
+      - vecchio formato: lista di dict con chiave 'Filename'
+      - selected_traverse come: lista di stringhe, lista di dict con 'Filename'/'name',
+        oppure un dict (es. {'P_prime_j':[...]}), nel qual caso non aggiunge nomi traverse.
+    """
+    def _slug(s):
+        s = str(s).strip()
+        # normalizzazione leggera, niente dipendenze esterne
+        repl = {" ": "_", "/": "-", "\\": "-", ":": "-", ";": "-", ",": "-", ".": "", "'": "", '"': ""}
+        for k, v in repl.items():
+            s = s.replace(k, v)
+        # keep solo char sicuri
+        return "".join(ch for ch in s if ch.isalnum() or ch in "-_").strip("_-")
+
+    def _names_from_new(cd):
+        # nuovo formato: dict con donors/receivers come dict
+        donors = []
+        receivers = []
+        if isinstance(cd, dict):
+            if isinstance(cd.get("donors"), dict):
+                donors = list(cd["donors"].keys())
+            if isinstance(cd.get("receivers"), dict):
+                receivers = list(cd["receivers"].keys())
+        return sorted(donors), sorted(receivers)
+
+    def _names_from_legacy(lst):
+        # vecchio formato: lista di dict con 'Filename'
+        out = []
+        if isinstance(lst, list):
+            for it in lst:
+                if isinstance(it, dict) and it.get("Filename"):
+                    out.append(str(it["Filename"]))
+        return out
+
+    def _traverse_names(tv):
+        # supporta: lista di stringhe, lista di dict, dict senza nomi -> []
+        if tv is None:
+            return []
+        if isinstance(tv, list):
+            out = []
+            for x in tv:
+                if isinstance(x, str) and x.strip():
+                    out.append(x.strip())
+                elif isinstance(x, dict):
+                    # prova chiavi comuni
+                    nm = x.get("Filename") or x.get("name") or x.get("Name")
+                    if nm:
+                        out.append(str(nm))
+            return sorted(set(out))
+        # se è un dict tipo {'P_prime_j':[...]} non c'è un nome utilizzabile
+        return []
+
+    # 1) prova nuovo formato
+    donors, receivers = _names_from_new(calculated_data)
+
+    # 2) se non abbiamo trovato nulla, prova legacy
+    if not donors and isinstance(calculated_data, list):
+        donors = _names_from_legacy(calculated_data)  # meglio di niente
+    # receivers legacy non distinguibili: lasciamo vuoto in quel caso
+
+    # 3) traverse
+    trv = _traverse_names(selected_traverse)
+
+    # 4) componi nome stabile
+    parts = []
+    if donors:
+        parts.append("DON_" + "+".join(_slug(n) for n in donors))
+    if receivers:
+        parts.append("REC_" + "+".join(_slug(n) for n in receivers))
+    if trv:
+        parts.append("TRV_" + "+".join(_slug(n) for n in trv))
+
+    name = "__".join(parts) if parts else "exchange"
+    # taglia a lunghezza ragionevole (evita nomi chilometrici in DB/FS)
+    return name[:200]
+
+def as_mapping(basins_json):
+    """Rende sempre un dict {nome: record} per il template."""
+    if isinstance(basins_json, dict):
+        return basins_json
+    out = {}
+    if isinstance(basins_json, list):
+        for idx, b in enumerate(basins_json):
+            if isinstance(b, dict):
+                key = b.get("Filename") or b.get("name") or f"basin_{idx+1}"
+                out[str(key)] = b
+            else:
+                out[f"basin_{idx+1}"] = {"value": b}
+    return out
