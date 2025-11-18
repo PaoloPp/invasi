@@ -31,7 +31,8 @@ def register():
         password_hash = generate_password_hash(request.form['password'])
         user = User(
             username=request.form['username'].lower(),
-            password=password_hash
+            password=password_hash,
+            is_active=True
         )
         # Check if username already exists
         query_check = db.session.execute(
