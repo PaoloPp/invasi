@@ -140,11 +140,10 @@
         <div id="printableArea">
             <br>
 
-            {% if not data %}
-            <div class="alert alert-info" role="alert">
-                Seleziona un file per visualizzare i dati.
-            </div>
-            {% elif (resource_type or "invasi") == "invasi" %}
+            {% if data %}
+            {% if (resource_type or "invasi") == "invasi" %}
+
+            {% if (resource_type or "invasi") == "invasi" %}
 
             <table class="table table-bordered">
                 <thead>
@@ -463,17 +462,6 @@
                     </div>
                 </div>
 
-                <div class="container1">
-                    <figure>
-                        <img src="{{ url_for('static', filename=plotA) }}" alt="Caso 1">
-                        <figcaption class="text-center">Figura 1: Caso 1 (capacità totale) - {{ filename }}</figcaption>
-                    </figure>
-                    <figure>
-                        <img src="{{ url_for('static', filename=plotB) }}" alt="Caso 2">
-                        <figcaption class="text-center">Figura 2: Caso 2 (capacità autorizzata) - {{ filename }}</figcaption>
-                    </figure>
-                </div>
-
             {% else %}
             <table class="table table-bordered table-striped table-fixed">
                 <thead>
@@ -502,7 +490,27 @@
                     </tr>
                 </tbody>
             </table>
-                        {% endif %}
+            {% endif %}
+
+                {% if (resource_type or 'invasi') == 'invasi' %}
+                <div class="container1">
+                    <figure>
+                        <img src="{{ url_for('static', filename=plotA) }}" alt="Caso 1">
+                        <figcaption class="text-center">Figura 1: Caso 1 (capacità totale) - {{ filename }}</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="{{ url_for('static', filename=plotB) }}" alt="Caso 2">
+                        <figcaption class="text-center">Figura 2: Caso 2 (capacità autorizzata) - {{ filename }}</figcaption>
+                    </figure>
+                </div>
+                {% endif %}
+
+                <br>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                Seleziona un file per visualizzare i dati.
+            </div>
+            {% endif %}
             </div>
         </div> <!-- End of printableArea -->
 
