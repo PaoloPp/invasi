@@ -27,9 +27,7 @@ def check_entry_existance(_filename, _current_user, _table):
 
 def set_year(_month):
     months = []
-    tmp_months = ["January", "February", "March", "April", "May", "June",
-                  "July", "August", "September", "October", "November", "December"]
-    pool = cycle(tmp_months)
+    pool = cycle(MONTHS_EN)
     for item in pool:
         if (item == _month) and (not months):
             months.append(item)
@@ -37,7 +35,8 @@ def set_year(_month):
             months.append(item)
         elif (months) and (item == _month):
             break
-    return months
+    en_to_it = dict(zip(MONTHS_EN, MONTHS_IT))
+    return [en_to_it.get(m, m) for m in months]
 
 
 def round_floats(obj):

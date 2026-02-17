@@ -95,13 +95,13 @@
   {% include "navbar.html" %}
 
   <div class="container mt-5">
-    <h1>Modin Exchange</h1>
+    <h1>Bilancio del sistema</h1>
 
     <div id="selected-values" class="selected-values">
       <strong>Invasi selezionati:</strong> <em>None</em>
     </div>
     <div id="selected-traverse" class="selected-values">
-      <strong>Traverse selezionate:</strong> <em>None</em>
+      <strong>Altre Risorse selezionate:</strong> <em>None</em>
     </div>
 
     <form id="damns_select" method="POST">
@@ -123,11 +123,11 @@
           </ul>
         </div>
 
-        <!-- Traverse -->
+        <!-- Altre risorse -->
         <div class="dropdown" id="dropdown-container-traverse">
           <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonTraverse"
             data-bs-toggle="dropdown" aria-expanded="false">
-            Seleziona traverse
+            Seleziona altre risorse
           </button>
           <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonTraverse" id="dropdown-menu-traverse">
             {% for file in traverse_files %}
@@ -141,10 +141,14 @@
           </ul>
         </div>
 
-        <!-- Parametri legacy ancora presenti nel form -->
-        <span>Lambda: </span>
-        <input type="text" inputmode="decimal" id="lambda" class="numeric-input" name="lambda" class="form-control"
-          placeholder="Lambda" required style="width: 120px;">
+        <span>KA:</span><input type="text" inputmode="decimal" name="KA" class="form-control" style="width: 70px;" value="7">
+        <span>KB:</span><input type="text" inputmode="decimal" name="KB" class="form-control" style="width: 70px;" value="5">
+        <span>α1:</span><input type="text" inputmode="decimal" name="alpha1" class="form-control" style="width: 80px;" value="0.6">
+        <span>α2:</span><input type="text" inputmode="decimal" name="alpha2" class="form-control" style="width: 80px;" value="0.4">
+        <select name="criterio" class="form-select" style="width: 160px;">
+          <option value="1">Criterio 1</option>
+          <option value="2">Criterio 2</option>
+        </select>
 
         <button type="submit" class="btn btn-primary">Inizia elaborazione</button>
         <button onclick="printSection()" class="btn btn-primary no-print">Salva come PDF</button>

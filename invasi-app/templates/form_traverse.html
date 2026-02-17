@@ -21,9 +21,24 @@
     {% include "navbar.html" %}
 
     <div class="container mt-5">
-        <h3>ModIn</h3>
+        <h3>Modifica dati - Altre Risorse</h3>
+        <div class="d-flex gap-2 mb-3">
+            <a class="btn btn-outline-primary {% if action_label == 'modifica' %}active{% endif %}" href="/form/modifica?resource_type={{ resource_type or 'altre' }}">Modifica dati</a>
+            <a class="btn btn-outline-primary {% if action_label == 'nuova' %}active{% endif %}" href="/form/nuova?resource_type={{ resource_type or 'altre' }}">Nuova infrastruttura</a>
+            <a class="btn btn-outline-danger {% if action_label == 'elimina' %}active{% endif %}" href="/form/elimina?resource_type={{ resource_type or 'altre' }}">Elimina dati</a>
+        </div>
+        <form method="POST" class="mb-3">
+            <div class="input-group">
+                <select class="form-select" name="resource_type">
+                    <option value="invasi" {% if resource_type == 'invasi' %}selected{% endif %}>Invasi</option>
+                    <option value="altre" {% if (resource_type or 'altre') == 'altre' %}selected{% endif %}>Altre Risorse</option>
+                </select>
+                <button class="btn btn-outline-secondary" type="submit" name="switch_resource" value="1">Cambia opzione</button>
+            </div>
+        </form>
 
         <form id="data_select" method="POST">
+            <input type="hidden" name="resource_type" value="{{ resource_type or 'altre' }}">
             <select class="form-select" id="filenameToModify" name="data_select" required onchange="setFileName()">
                 <option value="">Seleziona il file da modificare</option>
                 {% for file in files %}
@@ -48,6 +63,7 @@
         {% endwith %}
 
         <form id="fg-form" method="POST" novalidate>
+            <input type="hidden" name="resource_type" value="{{ resource_type or 'altre' }}">
             <input type="text" id="filenameToSelect" class="form-control" name="filename" placeholder="Nome traversa"
                 value="{{ data.get('Filename') if data and data.get('Filename') else '' }}" required>
 
@@ -57,9 +73,9 @@
                 <thead>
                     <tr>
                         <th>Mese</th>
-                        <th>P<sub>j</sub></th>
-                        <th>P<sub>j</sub>(eco)</th>
-                        <th>Pi<sub>j</sub></th>
+                        <th>Q<sub>oj</sub> (Mm3)</th>
+                        <th>Q<sub>pj</sub> (Mm3)</th>
+                        <th>Q<sub>pj</sub>(eco) (Mm3)</th>
                     </tr>
                 </thead>
                 <tbody>
