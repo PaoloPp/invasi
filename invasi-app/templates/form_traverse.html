@@ -70,20 +70,20 @@
                     <tr>
                         <th>Mese</th>
                         <th>Q<sub>oj</sub> (Mm<sup>3</sup>)</th>
-                        <th>Q<sub>pj</sub>(eco) (Mm<sup>3</sup>)</th>
                         <th>Q<sub>pj</sub> (Mm<sup>3</sup>)</th>
+                        <th>Q<sub>pj</sub>(eco) (Mm<sup>3</sup>)</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for i in range(12) %}
                     <tr>
-                        <td>{{ i + 1 }}</td>
+                        <td>{{ ["Ottobre","Novembre","Dicembre","Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre"][i] }}</td>
                         <td><input type="text" inputmode="decimal" class="form-control numeric-input" name="Pj-{{ i }}"
                                 value="{{ data.get('Pj', [0]*12)[i] }}"></td>
-                        <td><input type="text" inputmode="decimal" class="form-control numeric-input" name="Pjeco-{{ i }}"
-                                value="{{ data.get('Pj(eco)', [0]*12)[i] }}"></td>
                         <td><input type="text" inputmode="decimal" class="form-control numeric-input" name="Pij-{{ i }}"
                                 value="{{ data.get('Pij', [0]*12)[i] }}"></td>
+                        <td><input type="text" inputmode="decimal" class="form-control numeric-input" name="Pjeco-{{ i }}"
+                                value="{{ data.get('Pj(eco)', [0]*12)[i] }}"></td>
                     </tr>
                     {% endfor %}
                 </tbody>

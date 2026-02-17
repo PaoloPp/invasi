@@ -739,13 +739,29 @@ def index():
 @main_bp.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    files = get_user_files()
+    resource_type = request.values.get("resource_type", "invasi")
+    if resource_type == "altre_risorse":
+        files = get_user_files_traverse()
+    else:
+        files = [f for f in get_user_files() if "conza" in (f or "").lower()]
+        if not files:
+            files = get_user_files()
+
     if request.method == 'POST':
         filename = request.form.get("data_select")
         if filename:
+            if resource_type == "altre_risorse":
+                data = load_json_data_traverse(filename)
+                if not data:
+                    return redirect(url_for('main.dashboard', resource_type=resource_type))
+                data = round_floats(data)
+                months = set_year(data.get("Mese di partenza", "October"))
+                return render_template('dashboard.html', filename=filename, data=data, months=months, files=files,
+                                       resource_type=resource_type)
+
             data = load_json_data(filename)
             if not data:
-                return redirect(url_for('main.dashboard'))
+                return redirect(url_for('main.dashboard', resource_type=resource_type))
             data = round_floats(data)
             months = set_year(data.get("Mese di partenza"))
             plot_values(
@@ -758,8 +774,8 @@ def dashboard():
             )
             return render_template('dashboard.html', filename=filename, data=data, months=months, files=files,
                                    plotA="caso1_plot.png", plotB="caso2_plot.png",
-                                   resource_type="invasi")
-    return render_template('dashboard.html', data=None, files=files, resource_type="invasi")
+                                   resource_type=resource_type)
+    return render_template('dashboard.html', data=None, files=files, resource_type=resource_type)
 
 
 @main_bp.route("/form", methods=["GET", "POST"])
