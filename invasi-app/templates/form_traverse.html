@@ -21,11 +21,17 @@
     {% include "navbar.html" %}
 
     <div class="container mt-5">
-        <h3>ModIn</h3>
+        <h3>Modifica dati</h3>
+        <p><strong>Opzione:</strong> Altre risorse</p>
+        <div class="btn-group mb-3" role="group">
+            <button type="button" class="btn btn-outline-primary active">Modifica dati</button>
+            <button type="button" class="btn btn-outline-primary" disabled>Nuova infrastruttura</button>
+            <button type="button" class="btn btn-outline-danger" disabled>Elimina dati</button>
+        </div>
 
         <form id="data_select" method="POST">
             <select class="form-select" id="filenameToModify" name="data_select" required onchange="setFileName()">
-                <option value="">Seleziona il file da modificare</option>
+                <option value="">Seleziona il file Altre risorse da modificare</option>
                 {% for file in files %}
                 <option value="{{ file }}">{{ file }}</option>
                 {% endfor %}
@@ -48,7 +54,7 @@
         {% endwith %}
 
         <form id="fg-form" method="POST" novalidate>
-            <input type="text" id="filenameToSelect" class="form-control" name="filename" placeholder="Nome traversa"
+            <input type="text" id="filenameToSelect" class="form-control" name="filename" placeholder="Nome altra risorsa"
                 value="{{ data.get('Filename') if data and data.get('Filename') else '' }}" required>
 
             <br>
@@ -57,9 +63,9 @@
                 <thead>
                     <tr>
                         <th>Mese</th>
-                        <th>P<sub>j</sub></th>
-                        <th>P<sub>j</sub>(eco)</th>
-                        <th>Pi<sub>j</sub></th>
+                        <th>Q<sub>oj</sub> (Mm<sup>3</sup>)</th>
+                        <th>Q<sub>pj</sub>(eco) (Mm<sup>3</sup>)</th>
+                        <th>Q<sub>pj</sub> (Mm<sup>3</sup>)</th>
                     </tr>
                 </thead>
                 <tbody>

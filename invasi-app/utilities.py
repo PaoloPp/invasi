@@ -27,15 +27,15 @@ def check_entry_existance(_filename, _current_user, _table):
 
 def set_year(_month):
     months = []
-    tmp_months = ["January", "February", "March", "April", "May", "June",
-                  "July", "August", "September", "October", "November", "December"]
+    month_map = dict(zip(MONTHS_EN, MONTHS_IT))
+    tmp_months = MONTHS_EN
     pool = cycle(tmp_months)
     for item in pool:
         if (item == _month) and (not months):
-            months.append(item)
-        elif (months) and (item != _month):
-            months.append(item)
-        elif (months) and (item == _month):
+            months.append(month_map.get(item, item))
+        elif months and (item != _month):
+            months.append(month_map.get(item, item))
+        elif months and (item == _month):
             break
     return months
 
