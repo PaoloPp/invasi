@@ -709,7 +709,7 @@ def dashboard():
         if filename:
             data = load_json_data(filename)
             if not data:
-                return redirect(url_for('main_bp.dashboard'))
+                return redirect(url_for('main.dashboard'))
             data = round_floats(data)
             months = set_year(data.get("Mese di partenza"))
             plot_values(

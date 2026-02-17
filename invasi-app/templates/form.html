@@ -27,13 +27,13 @@
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                         <p class="mb-0"><strong>Opzione:</strong></p>
                         <select class="form-select w-auto" onchange="if(this.value){window.location.href=this.value}">
-                                <option value="{{ url_for('main_bp.form_basin') }}" selected>Invasi</option>
-                                <option value="{{ url_for('main_bp.form_traverse') }}">Altre risorse</option>
+                                <option value="{{ url_for('main.form_basin') }}" selected>Invasi</option>
+                                <option value="{{ url_for('main.form_traverse') }}">Altre risorse</option>
                         </select>
                 </div>
                 <div class="btn-group mb-3" role="group" aria-label="Azioni dati">
                         <button type="button" class="btn btn-outline-primary active">Modifica dati</button>
-                        <a href="{{ url_for('main_bp.form_basin') }}" class="btn btn-outline-primary">Nuova infrastruttura</a>
+                        <a href="{{ url_for('main.form_basin') }}" class="btn btn-outline-primary">Nuova infrastruttura</a>
                         <button type="submit" form="data_select" name="delete" value="delete" class="btn btn-outline-danger">Elimina dati</button>
                 </div>
 
