@@ -102,8 +102,12 @@
     {% include "navbar.html" %}
     <div class="container mt-5">
         <h1 class="text-center">Visualizza dati</h1>
-        <h3>Opzione: Invasi / Altre risorse</h3>
         <form id="data_select" method="POST">
+            <label for="resource_type" class="form-label">Categoria</label>
+            <select class="form-select mb-2" id="resource_type" name="resource_type" onchange="this.form.submit()">
+                <option value="invasi" {% if (resource_type or 'invasi') == 'invasi' %}selected{% endif %}>Invasi</option>
+                <option value="altre_risorse" {% if (resource_type or 'invasi') == 'altre_risorse' %}selected{% endif %}>Altre Risorse</option>
+            </select>
             <select class="form-select" id="data_select" name="data_select" required>
                 <option value="">-- Seleziona un file --</option>
                 {% for file in files %}
@@ -332,6 +336,16 @@
                                     <td>{{ data["P ev j"][i] + data["P inf j"][i] + data["D ec j"][i] }}</td>
                                 </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-bold">
+                                    <td>Anno</td>
+                                    <td>{{ data['P ev j']|sum }}</td>
+                                    <td>{{ data['P ev*']|sum }}</td>
+                                    <td>{{ data['P inf j']|sum }}</td>
+                                    <td>{{ data['P inf*']|sum }}</td>
+                                    <td>{{ data['D ec j']|sum }}</td>
+                                    <td>{{ data['D ec*']|sum }}</td>
+                                    <td>{{ data['P ev j']|sum + data['P inf j']|sum + data['D ec j']|sum }}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -369,6 +383,18 @@
                                     <td>{{ data["E pot j"][i] + data["E irr j"][i] + data["E ind j"][i] + data["E tra j"][i] }}</td>
                                 </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-bold">
+                                    <td>Anno</td>
+                                    <td>{{ data['E pot j']|sum }}</td>
+                                    <td>{{ data['E pot*']|sum }}</td>
+                                    <td>{{ data['E irr j']|sum }}</td>
+                                    <td>{{ data['E irr*']|sum }}</td>
+                                    <td>{{ data['E ind j']|sum }}</td>
+                                    <td>{{ data['E ind*']|sum }}</td>
+                                    <td>{{ data['E tra j']|sum }}</td>
+                                    <td>{{ data['E tra*']|sum }}</td>
+                                    <td>{{ data['E pot j']|sum + data['E irr j']|sum + data['E ind j']|sum + data['E tra j']|sum }}</td>
+                                </tr>
                             </tbody>
                         </table>
 
@@ -401,6 +427,15 @@
                                     <td>{{ data["Wi 2*"][i] }}</td>
                                 </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-bold">
+                                    <td>Anno</td>
+                                    <td>{{ data['w j']|sum }}</td>
+                                    <td>{{ data['w*']|sum }}</td>
+                                    <td>{{ data['W j']|sum }}</td>
+                                    <td>{{ data['W*']|sum }}</td>
+                                    <td>{{ data['Wi 1*']|sum }}</td>
+                                    <td>{{ data['Wi 2*']|sum }}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -427,6 +462,13 @@
                                     <td>{{ data["Sf 2*"][i] }}</td>
                                 </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-bold">
+                                    <td>Anno</td>
+                                    <td>{{ data['Sf 1']|sum }}</td>
+                                    <td>{{ data['Sf 1*']|sum }}</td>
+                                    <td>{{ data['Sf 2']|sum }}</td>
+                                    <td>{{ data['Sf 2*']|sum }}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -453,23 +495,52 @@
                                     <td>{{ data["D/S 2*"][i] }}</td>
                                 </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-bold">
+                                    <td>Anno</td>
+                                    <td>{{ data['D/S 1 j']|sum }}</td>
+                                    <td>{{ data['D/S 1*']|sum }}</td>
+                                    <td>{{ data['D/S 2 j']|sum }}</td>
+                                    <td>{{ data['D/S 2*']|sum }}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-
-                <div class="container1">
-                    <figure>
-                        <img src="{{ url_for('static', filename=plotA) }}" alt="Caso 1">
-                        <figcaption class="text-center">Figura 1 - {{ filename }}</figcaption>
-                    </figure>
-                    <figure>
-                        <img src="{{ url_for('static', filename=plotB) }}" alt="Caso 2">
-                        <figcaption class="text-center">Figura 2 - {{ filename }}</figcaption>
-                    </figure>
-                </div>
-
                 <br>
+            {% else %}
+                <table class="table table-bordered table-striped table-fixed">
+                    <thead>
+                        <tr>
+                            <th colspan="5">Deflussi di altre risorse</th>
+                        </tr>
+                        <tr>
+                            <th>Mese</th>
+                            <th>Q<sub>oj</sub> (Mm<sup>3</sup>)</th>
+                            <th>Q<sub>pj</sub> (Mm<sup>3</sup>)</th>
+                            <th>Q<sub>pj</sub>(eco) (Mm<sup>3</sup>)</th>
+                            <th>Q<sub>j</sub> (Mm<sup>3</sup>)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in range(data['Pj']|length) %}
+                        <tr>
+                            <td>{{ months[i] }}</td>
+                            <td>{{ data['Pj'][i] }}</td>
+                            <td>{{ data['Pij'][i] }}</td>
+                            <td>{{ data['Pj(eco)'][i] }}</td>
+                            <td>{{ data['Pj'][i] - (data['Pij'][i] + data['Pj(eco)'][i]) }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-secondary fw-bold">
+                            <td>Anno</td>
+                            <td>{{ data['Pj']|sum }}</td>
+                            <td>{{ data['Pij']|sum }}</td>
+                            <td>{{ data['Pj(eco)']|sum }}</td>
+                            <td>{{ data['Pj']|sum - (data['Pij']|sum + data['Pj(eco)']|sum) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p><strong>Formula:</strong> Q<sub>j</sub> = Q<sub>oj</sub> − (Q<sub>pj</sub> + Q<sub>pj</sub>(eco)).</p>
             {% endif %}
             {% else %}
             <div class="alert alert-info" role="alert">
@@ -481,7 +552,8 @@
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         <script>
-            document.getElementById('toggleViewPre').addEventListener('click', function () {
+            const togglePre = document.getElementById('toggleViewPre');
+            if (togglePre) togglePre.addEventListener('click', function () {
                 const view1 = document.getElementById('PreCorrezioni');
                 const view2 = document.getElementById('PostCorrezioni');
                 if (view1.style.display === 'none' || view2.style.display === 'block') {
@@ -492,7 +564,8 @@
         </script>
 
         <script>
-            document.getElementById('toggleViewPost').addEventListener('click', function () {
+            const togglePost = document.getElementById('toggleViewPost');
+            if (togglePost) togglePost.addEventListener('click', function () {
                 const view1 = document.getElementById('PreCorrezioni');
                 const view2 = document.getElementById('PostCorrezioni');
                 if (view2.style.display === 'none' || view1.style.display === 'block') {
