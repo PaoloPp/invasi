@@ -143,6 +143,8 @@
             {% if data %}
             {% if (resource_type or "invasi") == "invasi" %}
 
+            {% if (resource_type or "invasi") == "invasi" %}
+
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -490,20 +492,20 @@
             </table>
             {% endif %}
 
-            {% if (resource_type or 'invasi') == 'invasi' %}
-            <div class="container1">
-                <figure>
-                    <img src="{{ url_for('static', filename=plotA) }}" alt="Caso 1">
-                    <figcaption class="text-center">Figura 1: Caso 1 (capacità totale) - {{ filename }}</figcaption>
-                </figure>
-                <figure>
-                    <img src="{{ url_for('static', filename=plotB) }}" alt="Caso 2">
-                    <figcaption class="text-center">Figura 2: Caso 2 (capacità autorizzata) - {{ filename }}</figcaption>
-                </figure>
-            </div>
-            {% endif %}
+                {% if (resource_type or 'invasi') == 'invasi' %}
+                <div class="container1">
+                    <figure>
+                        <img src="{{ url_for('static', filename=plotA) }}" alt="Caso 1">
+                        <figcaption class="text-center">Figura 1: Caso 1 (capacità totale) - {{ filename }}</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="{{ url_for('static', filename=plotB) }}" alt="Caso 2">
+                        <figcaption class="text-center">Figura 2: Caso 2 (capacità autorizzata) - {{ filename }}</figcaption>
+                    </figure>
+                </div>
+                {% endif %}
 
-            <br>
+                <br>
             {% else %}
             <div class="alert alert-info" role="alert">
                 Seleziona un file per visualizzare i dati.
