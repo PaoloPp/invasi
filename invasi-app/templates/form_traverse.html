@@ -21,7 +21,7 @@
     {% include "navbar.html" %}
 
     <div class="container mt-5">
-        <h3>Modifica dati</h3>
+        <h3>{% if action == "new" %}Nuova infrastruttura{% elif action == "delete" %}Elimina dati{% else %}Modifica dati{% endif %}</h3>
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <p class="mb-0"><strong>Opzione:</strong></p>
             <select class="form-select w-auto" onchange="if(this.value){window.location.href=this.value}">
@@ -30,14 +30,14 @@
             </select>
         </div>
         <div class="btn-group mb-3" role="group" aria-label="Azioni dati">
-            <button type="button" class="btn btn-outline-primary active">Modifica dati</button>
-            <a href="{{ url_for('main.form_traverse') }}" class="btn btn-outline-primary">Nuova infrastruttura</a>
-            <button type="submit" form="data_select" name="delete" value="delete" class="btn btn-outline-danger">Elimina dati</button>
+            <a href="{{ url_for('main.form_traverse', action='edit') }}" class="btn btn-outline-primary {% if action == 'edit' %}active{% endif %}">Modifica dati</a>
+            <a href="{{ url_for('main.form_traverse', action='new') }}" class="btn btn-outline-primary {% if action == 'new' %}active{% endif %}">Nuova infrastruttura</a>
+            <a href="{{ url_for('main.form_traverse', action='delete') }}" class="btn btn-outline-danger {% if action == 'delete' %}active{% endif %}">Elimina dati</a>
         </div>
 
         <form id="data_select" method="POST">
             <select class="form-select" id="filenameToModify" name="data_select" required >
-                <option value="">Seleziona il file Altre risorse da modificare</option>
+                <option value="">Seleziona i dati Altre risorse</option>
                 {% for file in files %}
                 <option value="{{ file }}">{{ file }}</option>
                 {% endfor %}
@@ -49,7 +49,7 @@
             </div>
         </form>
 
-        <p>Inserisci di seguito i valori mensili per ciascun tipo</p>
+        <p>Inserisci di seguito i valori mensili per i deflussi di altre risorse</p>
 
         {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -70,14 +70,14 @@
                     <tr>
                         <th>Mese</th>
                         <th>Q<sub>oj</sub> (Mm<sup>3</sup>)</th>
-                        <th>Q<sub>pj</sub>(eco) (Mm<sup>3</sup>)</th>
+                        <th>Q<sub>pj</sub> (eco) (Mm<sup>3</sup>)</th>
                         <th>Q<sub>pj</sub> (Mm<sup>3</sup>)</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for i in range(12) %}
                     <tr>
-                        <td>{{ i + 1 }}</td>
+                        <td>{{ ["Ottobre","Novembre","Dicembre","Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre"][i] }}</td>
                         <td><input type="text" inputmode="decimal" class="form-control numeric-input" name="Pj-{{ i }}"
                                 value="{{ data.get('Pj', [0]*12)[i] }}"></td>
                         <td><input type="text" inputmode="decimal" class="form-control numeric-input" name="Pjeco-{{ i }}"
@@ -90,7 +90,7 @@
             </table>
 
             <div class="text-center">
-                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="submit" class="btn btn-primary">{% if action == "new" %}Salva nuova infrastruttura{% elif action == "delete" %}Aggiorna dati{% else %}Salva modifiche{% endif %}</button>
             </div>
         </form>
     </div>

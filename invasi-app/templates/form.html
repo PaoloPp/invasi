@@ -23,7 +23,7 @@
 
         <!--<div class="container mt-5 ms-3 me-3">-->
         <div class="container mt-5">
-                <h3>Modifica dati</h3>
+                <h3>{% if action == "new" %}Nuova infrastruttura{% elif action == "delete" %}Elimina dati{% else %}Modifica dati{% endif %}</h3>
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                         <p class="mb-0"><strong>Opzione:</strong></p>
                         <select class="form-select w-auto" onchange="if(this.value){window.location.href=this.value}">
@@ -32,9 +32,9 @@
                         </select>
                 </div>
                 <div class="btn-group mb-3" role="group" aria-label="Azioni dati">
-                        <button type="button" class="btn btn-outline-primary active">Modifica dati</button>
-                        <a href="{{ url_for('main.form_basin') }}" class="btn btn-outline-primary">Nuova infrastruttura</a>
-                        <button type="submit" form="data_select" name="delete" value="delete" class="btn btn-outline-danger">Elimina dati</button>
+                        <a href="{{ url_for('main.form_basin', action='edit') }}" class="btn btn-outline-primary {% if action == 'edit' %}active{% endif %}">Modifica dati</a>
+                        <a href="{{ url_for('main.form_basin', action='new') }}" class="btn btn-outline-primary {% if action == 'new' %}active{% endif %}">Nuova infrastruttura</a>
+                        <a href="{{ url_for('main.form_basin', action='delete') }}" class="btn btn-outline-danger {% if action == 'delete' %}active{% endif %}">Elimina dati</a>
                 </div>
 
                 <form id="data_select" method="POST">
@@ -736,7 +736,7 @@
 
                         <!-- Submit Button -->
                         <div class="text-center">
-                                <button type="submit" class="btn btn-primary">Submit</button>
+                                <button type="submit" class="btn btn-primary">{% if action == "new" %}Salva nuova infrastruttura{% elif action == "delete" %}Aggiorna dati{% else %}Salva modifiche{% endif %}</button>
                         </div>
                 </form>
                 <div><button id="validate" name="validate" class="btn btn-secondary">Validate</button></div>

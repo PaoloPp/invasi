@@ -104,6 +104,13 @@
         <h1 class="text-center">Visualizza dati</h1>
         <h3>Opzione: Invasi / Altre risorse</h3>
         <form id="data_select" method="POST">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <p class="mb-0"><strong>Opzione:</strong></p>
+                <select class="form-select w-auto" name="resource_type" onchange="this.form.submit()">
+                    <option value="invasi" {% if (resource_type or 'invasi') == 'invasi' %}selected{% endif %}>Invasi</option>
+                    <option value="altre_risorse" {% if resource_type == 'altre_risorse' %}selected{% endif %}>Altre risorse</option>
+                </select>
+            </div>
             <select class="form-select" id="data_select" name="data_select" required>
                 <option value="">-- Seleziona un file --</option>
                 {% for file in files %}
@@ -332,6 +339,16 @@
                                     <td>{{ data["P ev j"][i] + data["P inf j"][i] + data["D ec j"][i] }}</td>
                                 </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-bold">
+                                    <td>Anno</td>
+                                    <td>{{ data['P ev j']|sum }}</td>
+                                    <td>{{ data['P ev*']|sum }}</td>
+                                    <td>{{ data['P inf j']|sum }}</td>
+                                    <td>{{ data['P inf*']|sum }}</td>
+                                    <td>{{ data['D ec j']|sum }}</td>
+                                    <td>{{ data['D ec*']|sum }}</td>
+                                    <td>{{ data['P ev j']|sum + data['P inf j']|sum + data['D ec j']|sum }}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -369,6 +386,18 @@
                                     <td>{{ data["E pot j"][i] + data["E irr j"][i] + data["E ind j"][i] + data["E tra j"][i] }}</td>
                                 </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-bold">
+                                    <td>Anno</td>
+                                    <td>{{ data['E pot j']|sum }}</td>
+                                    <td>{{ data['E pot*']|sum }}</td>
+                                    <td>{{ data['E irr j']|sum }}</td>
+                                    <td>{{ data['E irr*']|sum }}</td>
+                                    <td>{{ data['E ind j']|sum }}</td>
+                                    <td>{{ data['E ind*']|sum }}</td>
+                                    <td>{{ data['E tra j']|sum }}</td>
+                                    <td>{{ data['E tra*']|sum }}</td>
+                                    <td>{{ data['E pot j']|sum + data['E irr j']|sum + data['E ind j']|sum + data['E tra j']|sum }}</td>
+                                </tr>
                             </tbody>
                         </table>
 
@@ -401,6 +430,9 @@
                                     <td>{{ data["Wi 2*"][i] }}</td>
                                 </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-bold">
+                                    <td>Anno</td><td>{{ data['w j']|sum }}</td><td>{{ data['w*']|sum }}</td><td>{{ data['W j']|sum }}</td><td>{{ data['W*']|sum }}</td><td>{{ data['Wi 1*']|sum }}</td><td>{{ data['Wi 2*']|sum }}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -427,6 +459,9 @@
                                     <td>{{ data["Sf 2*"][i] }}</td>
                                 </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-bold">
+                                    <td>Anno</td><td>{{ data['Sf 1']|sum }}</td><td>{{ data['Sf 1*']|sum }}</td><td>{{ data['Sf 2']|sum }}</td><td>{{ data['Sf 2*']|sum }}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -453,11 +488,15 @@
                                     <td>{{ data["D/S 2*"][i] }}</td>
                                 </tr>
                                 {% endfor %}
+                                <tr class="table-secondary fw-bold">
+                                    <td>Anno</td><td>{{ data['D/S 1 j']|sum }}</td><td>{{ data['D/S 1*']|sum }}</td><td>{{ data['D/S 2 j']|sum }}</td><td>{{ data['D/S 2*']|sum }}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
+                {% if (resource_type or "invasi") == "invasi" %}
                 <div class="container1">
                     <figure>
                         <img src="{{ url_for('static', filename=plotA) }}" alt="Caso 1">
@@ -468,8 +507,40 @@
                         <figcaption class="text-center">Figura 2 - {{ filename }}</figcaption>
                     </figure>
                 </div>
+                {% endif %}
 
                 <br>
+            {% else %}
+            <table class="table table-bordered table-striped table-fixed">
+                <thead>
+                    <th colspan="6">Deflussi di altre risorse</th>
+                    <tr>
+                        <th>Mese</th>
+                        <th>Q<sub>oj</sub> (Mm<sup>3</sup>)</th>
+                        <th>Q<sub>pj</sub> (Mm<sup>3</sup>)</th>
+                        <th>Q<sub>pj</sub>(eco) (Mm<sup>3</sup>)</th>
+                        <th>Q<sub>j</sub> (Mm<sup>3</sup>)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in range(data.get('Pj', [])|length) %}
+                    <tr>
+                        <td>{{ months[i] }}</td>
+                        <td>{{ data.get('Pj', [0]*12)[i] }}</td>
+                        <td>{{ data.get('Pij', [0]*12)[i] }}</td>
+                        <td>{{ data.get('Pj(eco)', [0]*12)[i] }}</td>
+                        <td>{{ data.get('Pj', [0]*12)[i] - (data.get('Pij', [0]*12)[i] + data.get('Pj(eco)', [0]*12)[i]) }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="table-secondary fw-bold">
+                        <td>Anno</td>
+                        <td>{{ data.get('Pj', [])|sum }}</td>
+                        <td>{{ data.get('Pij', [])|sum }}</td>
+                        <td>{{ data.get('Pj(eco)', [])|sum }}</td>
+                        <td>{{ data.get('Pj', [])|sum - (data.get('Pij', [])|sum + data.get('Pj(eco)', [])|sum) }}</td>
+                    </tr>
+                </tbody>
+            </table>
             {% endif %}
             {% else %}
             <div class="alert alert-info" role="alert">
