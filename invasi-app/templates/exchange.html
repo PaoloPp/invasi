@@ -116,7 +116,7 @@
             {% for file in files %}
             <li>
               <label class="dropdown-item">
-                <input type="checkbox" name="selected_files" value="{{ file }}" class="option-checkbox"> {{ file }}
+                <input type="checkbox" name="selected_files" value="{{ file }}" class="option-checkbox" {% if file in selected_files|default([]) %}checked{% endif %}> {{ file }}
               </label>
             </li>
             {% endfor %}
@@ -125,15 +125,15 @@
 
         <!-- Altre risorse -->
         <div class="dropdown" id="dropdown-container-traverse">
-          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonAltre risorse"
+          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonAltreRisorse"
             data-bs-toggle="dropdown" aria-expanded="false">
             Seleziona altre risorse
           </button>
-          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonAltre risorse" id="dropdown-menu-traverse">
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonAltreRisorse" id="dropdown-menu-traverse">
             {% for file in traverse_files %}
             <li>
               <label class="dropdown-item">
-                <input type="checkbox" name="selected_traverse" value="{{ file }}" class="option-checkbox-traverse"> {{
+                <input type="checkbox" name="selected_traverse" value="{{ file }}" class="option-checkbox-traverse" {% if file in selected_traverse|default([]) %}checked{% endif %}> {{
                 file }}
               </label>
             </li>
@@ -527,43 +527,36 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-      // Invasi Dropdown Handling
+      // Invasi / Altre risorse selected-values handling
       const invasiCheckboxes = document.querySelectorAll('.option-checkbox');
-      const selectedInvasiContainer = document.getElementById('selected-values');
-      invasiCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-          const selected = Array.from(invasiCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
-          selectedInvasiContainer.innerHTML = `<strong>Invasi selezionati:</strong> `;
-          if (selected.length === 0) {
-            selectedInvasiContainer.innerHTML += `<em>None</em>`;
-          } else {
-            selected.forEach(value => {
-              const span = document.createElement('span');
-              span.textContent = value;
-              selectedInvasiContainer.appendChild(span);
-            });
-          }
-        });
-      });
-
-      // Altre risorse Dropdown Handling
       const traverseCheckboxes = document.querySelectorAll('.option-checkbox-traverse');
-      const selectedAltre risorseContainer = document.getElementById('selected-traverse');
-      traverseCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-          const selected = Array.from(traverseCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
-          selectedAltre risorseContainer.innerHTML = `<strong>Altre risorse selezionate:</strong> `;
-          if (selected.length === 0) {
-            selectedAltre risorseContainer.innerHTML += `<em>None</em>`;
-          } else {
-            selected.forEach(value => {
-              const span = document.createElement('span');
-              span.textContent = value;
-              selectedAltre risorseContainer.appendChild(span);
-            });
-          }
+      const selectedInvasiContainer = document.getElementById('selected-values');
+      const selectedTraverseContainer = document.getElementById('selected-traverse');
+
+      function renderSelected(container, label, values, emptyLabel = 'Nessuna') {
+        container.innerHTML = `<strong>${label}</strong> `;
+        if (values.length === 0) {
+          container.innerHTML += `<em>${emptyLabel}</em>`;
+          return;
+        }
+        values.forEach(value => {
+          const span = document.createElement('span');
+          span.textContent = value;
+          container.appendChild(span);
         });
-      });
+      }
+
+      function refreshSelectedValues() {
+        const selectedInvasi = Array.from(invasiCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+        const selectedTraverse = Array.from(traverseCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+
+        renderSelected(selectedInvasiContainer, 'Invasi selezionati:', selectedInvasi, 'Nessuno');
+        renderSelected(selectedTraverseContainer, 'Altre risorse selezionate:', selectedTraverse, 'Nessuna');
+      }
+
+      invasiCheckboxes.forEach(checkbox => checkbox.addEventListener('change', refreshSelectedValues));
+      traverseCheckboxes.forEach(checkbox => checkbox.addEventListener('change', refreshSelectedValues));
+      refreshSelectedValues();
     </script>
 
     <script>
