@@ -1797,11 +1797,13 @@ def exchange():
                                    comparison1=comp[0], comparison2=comp[1], comparison3=comp[2],
                                    traverse=traverse_data, traverse_tot=data.get(
                                        "traverse_amount", 0),
-                                   satisfiedA=data.get("satisfiedA"), satisfiedB=data.get("satisfiedB"))
+                                   satisfiedA=data.get("satisfiedA"), satisfiedB=data.get("satisfiedB"),
+                                   selected_files=[], selected_traverse=[])
         # regular empty page
         return render_template('exchange.html', data=None,
                                past_exchange=past_exchange, files=files, traverse_files=traverse_files,
-                               surplus_sum=0, deficit_sum=0, traverse=0, total=0)
+                               surplus_sum=0, deficit_sum=0, traverse=0, traverse_tot=0, total=0,
+                               selected_files=[], selected_traverse=[])
 
     # ---------- DELETE: JSON API ----------
     if request.method == 'DELETE':
@@ -1872,7 +1874,8 @@ def exchange():
                                            comparison1=comp[0], comparison2=comp[1], comparison3=comp[2],
                                            traverse=traverse_data, traverse_tot=data.get(
                                                "traverse_amount", 0),
-                                           satisfiedA=data.get("satisfiedA"), satisfiedB=data.get("satisfiedB"))
+                                           satisfiedA=data.get("satisfiedA"), satisfiedB=data.get("satisfiedB"),
+                                           selected_files=[], selected_traverse=[])
             flash("Select a saved exchange.", "warning")
             return redirect(url_for('main.exchange'))
 
@@ -1983,4 +1986,5 @@ def exchange():
                                calculated_data1=calculated_data1, calculated_data2=calculated_data2, calculated_data3=calculated_data3,
                                comparison1=comparison[0], comparison2=comparison[1], comparison3=comparison[2],
                                traverse=traverse_data, total=total, traverse_tot=traverse_amount,
-                               satisfiedA=satisfiedA, satisfiedB=satisfiedB)
+                               satisfiedA=satisfiedA, satisfiedB=satisfiedB,
+                               selected_files=selected_files, selected_traverse=selected_traverse)
