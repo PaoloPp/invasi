@@ -101,19 +101,9 @@
 <body>
     {% include "navbar.html" %}
     <div class="container mt-5">
-        <h1 class="text-center">Home</h1>
-        <h3>Visualizza dati</h3>
-        <form method="GET" class="mb-3">
-            <div class="input-group">
-                <select class="form-select" name="resource_type">
-                    <option value="invasi" {% if (resource_type or 'invasi') == 'invasi' %}selected{% endif %}>Invasi</option>
-                    <option value="altre" {% if resource_type == 'altre' %}selected{% endif %}>Altre Risorse</option>
-                </select>
-                <button class="btn btn-outline-secondary" type="submit">Applica opzione</button>
-            </div>
-        </form>
+        <h1 class="text-center">ModIn</h1>
+        <h3>Data from JSON</h3>
         <form id="data_select" method="POST">
-            <input type="hidden" name="resource_type" value="{{ resource_type or 'invasi' }}">
             <select class="form-select" id="data_select" name="data_select" required>
                 <option value="">-- Select a file --</option>
                 {% for file in files %}
@@ -143,8 +133,6 @@
             {% if data %}
             {% if (resource_type or "invasi") == "invasi" %}
 
-            {% if (resource_type or "invasi") == "invasi" %}
-
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -156,39 +144,39 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <th>Sup (Km<sup>2</sup>)</th>
+                        <th>S (Km<sup>2</sup>)</th>
                         <td>{{ data['S'] }}</td>
-                        <th>A (Mm3)</th>
+                        <th>A</th>
                         <td>{{ data['A'] }}</td>
                     </tr>
                     <tr>
-                        <th>W<sub>inv</sub> tot (Mm3)</th>
+                        <th>W<sub>inv</sub> tot</th>
                         <td>{{ data['Winv tot'] }}</td>
-                        <th>A' (Mm3)</th>
+                        <th>A'</th>
                         <td>{{ data['A\''] }}</td>
                     </tr>
                     <tr>
-                        <th>W<sub>inv</sub> aut (Mm3)</th>
+                        <th>W<sub>inv</sub> aut</th>
                         <td>{{ data['Winv aut'] }}</td>
-                        <th>D<sub>ec</sub> (Mm3)</th>
+                        <th>D<sub>ec</sub></th>
                         <td>{{ data['D ec'] }}</td>
                     </tr>
                     <tr>
-                        <th>W<sub>o</sub> (Mm3)</th>
+                        <th>W<sub>o</sub></th>
                         <td>{{ data['Wo'] }}</td>
-                        <th>E<sub>pot</sub> (Mm3)</th>
+                        <th>E<sub>pot</sub></th>
                         <td>{{ data['E pot'] }}</td>
                     </tr>
                     <tr>
-                        <th>E<sub>irr</sub> (Mm3)</th>
+                        <th>E<sub>irr</sub></th>
                         <td>{{ data['E irr'] }}</td>
-                        <th>E<sub>ind</sub> (Mm3)</th>
+                        <th>E<sub>ind</sub></th>
                         <td>{{ data['E ind'] }}</td>
                     </tr>
                     <tr>
-                        <th>P<sub>ev</sub> (Mm3)</th>
+                        <th>P<sub>ev</sub></th>
                         <td>{{ data['P ev'] }}</td>
-                        <th>P<sub>inf</sub> (Mm3)</th>
+                        <th>P<sub>inf</sub></th>
                         <td>{{ data['P inf'] }}</td>
                 </tbody>
             </table>
@@ -279,7 +267,6 @@
                                 <th colspan="7">Afflussi all'invaso</th>
                                 <tr colspan="7">
                                     <th>Mese</th>
-                                    <th>A<sub>0j</sub></th>
                                     <th>A<sub>j</sub></th>
                                     <th>A*<sub>j</sub></th>
                                     <th>A<sub>cj</sub></th>
@@ -292,7 +279,6 @@
                                 {% for i in range(data['A j']|length) %}
                                 <tr>
                                     <td>{{ months[i] }}</td>
-                                    <td>{{ (data["A j"][i] + data["P ev j"][i] + data["P inf j"][i] - data["D ec j"][i])|round(2) }}</td>
                                     <td>{{ data["A j"][i] }}</td>
                                     <td>{{ data["A*"][i] }}</td>
                                     <td>{{ data["A tra"][i] }}</td>
@@ -301,9 +287,6 @@
                                     <td>{{ data["Aitot*"][i] }}</td>
                                 </tr>
                                 {% endfor %}
-                                <tr class="fw-bold">
-                                    <td>Anno</td><td>{{ ((data['A j']|sum) + (data['P ev j']|sum) + (data['P inf j']|sum) - (data['D ec j']|sum))|round(2) }}</td><td>{{ (data['A j']|sum)|round(2) }}</td><td>{{ (data['A*']|last)|round(2) }}</td><td>{{ (data['A tra']|sum)|round(2) }}</td><td>{{ (data['A* tra']|last)|round(2) }}</td><td>{{ (data['Aitot j']|sum)|round(2) }}</td><td>{{ (data['Aitot*']|last)|round(2) }}</td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -321,7 +304,6 @@
                                     <th>P*<sub>j</sub> (inf)</th>
                                     <th>D<sub>j</sub> (eco)</th>
                                     <th>D*<sub>j</sub> (eco)</th>
-                                    <th>P<sub>jtot</sub> (Mm3)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -334,7 +316,6 @@
                                     <td>{{ data["P inf*"][i] }}</td>
                                     <td>{{ data['D ec j'][i] }}</td>
                                     <td>{{ data["D ec*"][i] }}</td>
-                                    <td>{{ (data["P ev j"][i] + data["P inf j"][i] + data["D ec j"][i])|round(2) }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -356,7 +337,6 @@
                                     <th>E*<sub>j</sub> (ind)</th>
                                     <th>E<sub>dj</sub></th>
                                     <th>E*<sub>dj</sub></th>
-                                    <th>E<sub>jtot</sub> (Mm3)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -462,48 +442,16 @@
                     </div>
                 </div>
 
-            {% else %}
-            <table class="table table-bordered table-striped table-fixed">
-                <thead>
-                    <tr><th colspan="5">Deflussi di altre risorse</th></tr>
-                    <tr>
-                        <th>Mese</th><th>Qoj (Mm3)</th><th>Qpj (Mm3)</th><th>Qpj(eco) (Mm3)</th><th>Qj (Mm3)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(data['Pj']|length) %}
-                    {% set qj = data['Pj'][i] - (data['Pij'][i] + data['Pj(eco)'][i]) %}
-                    <tr>
-                        <td>{{ months[i] }}</td>
-                        <td>{{ data['Pj'][i] }}</td>
-                        <td>{{ data['Pij'][i] }}</td>
-                        <td>{{ data['Pj(eco)'][i] }}</td>
-                        <td>{{ qj|round(2) }}</td>
-                    </tr>
-                    {% endfor %}
-                    <tr class="fw-bold">
-                        <td>Anno</td>
-                        <td>{{ (data['Pj']|sum)|round(2) }}</td>
-                        <td>{{ (data['Pij']|sum)|round(2) }}</td>
-                        <td>{{ (data['Pj(eco)']|sum)|round(2) }}</td>
-                        <td>{{ ((data['Pj']|sum) - ((data['Pij']|sum) + (data['Pj(eco)']|sum)) )|round(2) }}</td>
-                    </tr>
-                </tbody>
-            </table>
-            {% endif %}
-
-                {% if (resource_type or 'invasi') == 'invasi' %}
                 <div class="container1">
                     <figure>
                         <img src="{{ url_for('static', filename=plotA) }}" alt="Caso 1">
-                        <figcaption class="text-center">Figura 1: Caso 1 (capacità totale) - {{ filename }}</figcaption>
+                        <figcaption class="text-center">Figura 1: Caso 1 - {{ filename }}</figcaption>
                     </figure>
                     <figure>
                         <img src="{{ url_for('static', filename=plotB) }}" alt="Caso 2">
-                        <figcaption class="text-center">Figura 2: Caso 2 (capacità autorizzata) - {{ filename }}</figcaption>
+                        <figcaption class="text-center">Figura 2: Caso 2 - {{ filename }}</figcaption>
                     </figure>
                 </div>
-                {% endif %}
 
                 <br>
             {% else %}
