@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from flask import render_template, redirect, url_for, request, flash, jsonify, send_file, Blueprint
 from flask_login import login_required, current_user
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.exc import SQLAlchemyError
 from io import StringIO
 from collections import defaultdict
@@ -58,11 +58,23 @@ MONTH_INDEX = {m: i for i, m in enumerate(MONTHS)}
 
 
 def list_json_files(folder: Path) -> List[str]:
-    return sorted([p.name for p in folder.glob("*.json")])
+    return sorted([p.stem for p in folder.glob("*.json")])
+
+
+def _normalize_entry_name(name: str) -> str:
+    cleaned = (name or "").strip()
+    if cleaned.lower().endswith(".json"):
+        cleaned = cleaned[:-5]
+    return cleaned
+
+
+def _disk_filename(name: str) -> str:
+    normalized = _normalize_entry_name(name)
+    return f"{normalized}.json"
 
 
 def load_json(folder: Path, filename: str) -> Dict:
-    path = folder / filename
+    path = folder / _disk_filename(filename)
     if not path.exists():
         return {}
     with open(path, "r", encoding="utf-8") as f:
@@ -70,65 +82,89 @@ def load_json(folder: Path, filename: str) -> Dict:
 
 
 def save_json(folder: Path, filename: str, data: Dict) -> None:
-    path = folder / filename
+    path = folder / _disk_filename(filename)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def delete_json(folder: Path, filename: str) -> None:
-    path = folder / filename
+    path = folder / _disk_filename(filename)
     if path.exists():
         path.unlink()
 
 
 def _list_entries(folder: Path, db_model) -> List[str]:
     if current_user.is_authenticated:
-        return db.session.execute(
+        names = db.session.execute(
             db.select(db_model.filename).filter_by(user_id=current_user.id)
         ).scalars().all()
+        normalized = [_normalize_entry_name(name) for name in names if name]
+        return sorted(set(normalized))
     return list_json_files(folder)
 
 
 def _load_entry(folder: Path, filename: str, db_model) -> Dict:
+    entry_name = _normalize_entry_name(filename)
     if current_user.is_authenticated:
         row = db.session.execute(
-            db.select(db_model.json_data).filter_by(filename=filename, user_id=current_user.id)
+            db.select(db_model.json_data).filter(
+                db_model.user_id == current_user.id,
+                or_(
+                    db_model.filename == entry_name,
+                    db_model.filename == f"{entry_name}.json",
+                ),
+            )
         ).scalar_one_or_none()
         if row:
             try:
                 return json.loads(row)
             except json.JSONDecodeError:
-                flash(f"Contenuto JSON non valido per {filename}.")
+                flash(f"Contenuto JSON non valido per {entry_name}.")
                 return {}
-    return load_json(folder, filename)
+    return load_json(folder, entry_name)
 
 
 def _save_entry(folder: Path, filename: str, payload: Dict, db_model) -> None:
+    entry_name = _normalize_entry_name(filename)
     if current_user.is_authenticated:
         existing = db.session.execute(
-            db.select(db_model).filter_by(filename=filename, user_id=current_user.id)
+            db.select(db_model).filter(
+                db_model.user_id == current_user.id,
+                or_(
+                    db_model.filename == entry_name,
+                    db_model.filename == f"{entry_name}.json",
+                ),
+            )
         ).scalar_one_or_none()
         raw = json.dumps(payload, ensure_ascii=False, indent=2)
         if existing:
+            existing.filename = entry_name
             existing.json_data = raw
         else:
-            db.session.add(db_model(filename=filename, json_data=raw, user_id=current_user.id))
+            db.session.add(db_model(filename=entry_name, json_data=raw, user_id=current_user.id))
         db.session.commit()
         return
-    save_json(folder, filename, payload)
+    save_json(folder, entry_name, payload)
 
 
 def _delete_entry(folder: Path, filename: str, db_model) -> bool:
+    entry_name = _normalize_entry_name(filename)
     if current_user.is_authenticated:
         existing = db.session.execute(
-            db.select(db_model).filter_by(filename=filename, user_id=current_user.id)
+            db.select(db_model).filter(
+                db_model.user_id == current_user.id,
+                or_(
+                    db_model.filename == entry_name,
+                    db_model.filename == f"{entry_name}.json",
+                ),
+            )
         ).scalar_one_or_none()
         if not existing:
             return False
         db.session.delete(existing)
         db.session.commit()
         return True
-    path = folder / filename
+    path = folder / _disk_filename(entry_name)
     if not path.exists():
         return False
     path.unlink()
@@ -780,7 +816,7 @@ def form_basin():
             "Cj(ind)": basin.Cjind,
             "Cj(tra)": basin.Cjtra,
         }
-        filename = f"{basin.name}.json"
+        filename = _normalize_entry_name(basin.name)
         _save_entry(BASINS_DIR, filename, out, JsonFile)
         flash(f"Salvato {filename}")
         files = _list_entries(BASINS_DIR, JsonFile)
@@ -822,7 +858,7 @@ def form_traverse():
             "Pj(eco)": trav.Pj_eco,
             "Pij": trav.Pij
         }
-        filename = f"{trav.name}.json"
+        filename = _normalize_entry_name(trav.name)
         _save_entry(TRAVERSE_DIR, filename, out, JsonFileTraverse)
         flash(f"Salvato {filename}")
         files = _list_entries(TRAVERSE_DIR, JsonFileTraverse)
