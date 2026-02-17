@@ -101,7 +101,7 @@
       <strong>Invasi selezionati:</strong> <em>None</em>
     </div>
     <div id="selected-traverse" class="selected-values">
-      <strong>Altre risorse selezionate:</strong> <em>Nessuna</em>
+      <strong>Altre Risorse selezionate:</strong> <em>Nessuna</em>
     </div>
 
     <form id="damns_select" method="POST">
@@ -246,7 +246,7 @@
             <tr>
               <th></th>
               <th>Invasi</th>
-              <th>Disponibilità altre risorse Q (Mm³)</th>
+              <th>Disponibilità Altre Risorse Q (Mm³)</th>
               <th>Totale (Mm³)</th>
             </tr>
           </thead>
@@ -264,6 +264,7 @@
 
       {% if calculated_data1 or calculated_data2 or calculated_data3 %}
       <div id="ExchangeList" class="container mt-5 table-responsive">
+        <p class="mb-2"><small><strong>Nota:</strong> Selezione automatica = criterio selezionato automaticamente in base alle verifiche di funzionamento.</small></p>
         <ul class="nav nav-tabs" id="dataTabs" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="criterio1-tab" data-bs-toggle="tab" data-bs-target="#criterio1"
@@ -280,7 +281,7 @@
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="criterio3-tab" data-bs-toggle="tab" data-bs-target="#criterio3" type="button"
               role="tab" aria-controls="criterio3" aria-selected="false">
-              Risultato finale
+              Selezione automatica
             </button>
           </li>
         </ul>
@@ -443,7 +444,7 @@
             {% endif %}
           </div>
 
-          <!-- ================= Risultato finale (criterio scelto) ================= -->
+          <!-- ================= Selezione automatica (criterio scelto) ================= -->
           <div class="tab-pane fade" id="criterio3" role="tabpanel" aria-labelledby="criterio3-tab">
             {% if calculated_data3 %}
             {% set model3 = calculated_data3.get('model','?') %}
@@ -551,7 +552,7 @@
         const selectedTraverse = Array.from(traverseCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
 
         renderSelected(selectedInvasiContainer, 'Invasi selezionati:', selectedInvasi, 'Nessuno');
-        renderSelected(selectedTraverseContainer, 'Altre risorse selezionate:', selectedTraverse, 'Nessuna');
+        renderSelected(selectedTraverseContainer, 'Altre Risorse selezionate:', selectedTraverse, 'Nessuna');
       }
 
       invasiCheckboxes.forEach(checkbox => checkbox.addEventListener('change', refreshSelectedValues));
