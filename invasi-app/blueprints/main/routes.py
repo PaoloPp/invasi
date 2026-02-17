@@ -80,6 +80,60 @@ def delete_json(folder: Path, filename: str) -> None:
     if path.exists():
         path.unlink()
 
+
+def _list_entries(folder: Path, db_model) -> List[str]:
+    if current_user.is_authenticated:
+        return db.session.execute(
+            db.select(db_model.filename).filter_by(user_id=current_user.id)
+        ).scalars().all()
+    return list_json_files(folder)
+
+
+def _load_entry(folder: Path, filename: str, db_model) -> Dict:
+    if current_user.is_authenticated:
+        row = db.session.execute(
+            db.select(db_model.json_data).filter_by(filename=filename, user_id=current_user.id)
+        ).scalar_one_or_none()
+        if row:
+            try:
+                return json.loads(row)
+            except json.JSONDecodeError:
+                flash(f"Contenuto JSON non valido per {filename}.")
+                return {}
+    return load_json(folder, filename)
+
+
+def _save_entry(folder: Path, filename: str, payload: Dict, db_model) -> None:
+    if current_user.is_authenticated:
+        existing = db.session.execute(
+            db.select(db_model).filter_by(filename=filename, user_id=current_user.id)
+        ).scalar_one_or_none()
+        raw = json.dumps(payload, ensure_ascii=False, indent=2)
+        if existing:
+            existing.json_data = raw
+        else:
+            db.session.add(db_model(filename=filename, json_data=raw, user_id=current_user.id))
+        db.session.commit()
+        return
+    save_json(folder, filename, payload)
+
+
+def _delete_entry(folder: Path, filename: str, db_model) -> bool:
+    if current_user.is_authenticated:
+        existing = db.session.execute(
+            db.select(db_model).filter_by(filename=filename, user_id=current_user.id)
+        ).scalar_one_or_none()
+        if not existing:
+            return False
+        db.session.delete(existing)
+        db.session.commit()
+        return True
+    path = folder / filename
+    if not path.exists():
+        return False
+    path.unlink()
+    return True
+
 # ---------------------------
 # Modello dei dati (per chiarezza)
 # ---------------------------
@@ -655,7 +709,7 @@ def dashboard():
         if filename:
             data = load_json_data(filename)
             if not data:
-                return redirect(url_for('main_bp.dashboard'))
+                return redirect(url_for('main.dashboard'))
             data = round_floats(data)
             months = set_year(data.get("Mese di partenza"))
             plot_values(
@@ -674,7 +728,7 @@ def dashboard():
 
 @main_bp.route("/form", methods=["GET", "POST"])
 def form_basin():
-    files = list_json_files(BASINS_DIR)
+    files = _list_entries(BASINS_DIR, JsonFile)
     data = {}
     if request.method == "POST":
         if "load" in request.form:
@@ -682,7 +736,7 @@ def form_basin():
             if not fname:
                 flash("Seleziona un file.")
                 return render_template("form.html", files=files, data=data)
-            data = load_json(BASINS_DIR, fname)
+            data = _load_entry(BASINS_DIR, fname, JsonFile)
             return render_template("form.html", files=files, data=data)
 
         if "delete" in request.form:
@@ -690,9 +744,11 @@ def form_basin():
             if not fname:
                 flash("Seleziona un file da eliminare.")
                 return render_template("form.html", files=files, data=data)
-            delete_json(BASINS_DIR, fname)
-            flash(f"File {fname} eliminato.")
-            files = list_json_files(BASINS_DIR)
+            if _delete_entry(BASINS_DIR, fname, JsonFile):
+                flash(f"File {fname} eliminato.")
+            else:
+                flash(f"File {fname} non trovato.")
+            files = _list_entries(BASINS_DIR, JsonFile)
             return render_template("form.html", files=files, data={})
 
         # submit principale del form
@@ -725,9 +781,9 @@ def form_basin():
             "Cj(tra)": basin.Cjtra,
         }
         filename = f"{basin.name}.json"
-        save_json(BASINS_DIR, filename, out)
+        _save_entry(BASINS_DIR, filename, out, JsonFile)
         flash(f"Salvato {filename}")
-        files = list_json_files(BASINS_DIR)
+        files = _list_entries(BASINS_DIR, JsonFile)
         return render_template("form.html", files=files, data=out)
 
     # GET
@@ -736,7 +792,7 @@ def form_basin():
 
 @main_bp.route("/form_traverse", methods=["GET", "POST"])
 def form_traverse():
-    files = list_json_files(TRAVERSE_DIR)
+    files = _list_entries(TRAVERSE_DIR, JsonFileTraverse)
     data = {}
     if request.method == "POST":
         if "load" in request.form:
@@ -744,7 +800,7 @@ def form_traverse():
             if not fname:
                 flash("Seleziona un file.")
                 return render_template("form_traverse.html", files=files, data=data)
-            data = load_json(TRAVERSE_DIR, fname)
+            data = _load_entry(TRAVERSE_DIR, fname, JsonFileTraverse)
             return render_template("form_traverse.html", files=files, data=data)
 
         if "delete" in request.form:
@@ -752,9 +808,11 @@ def form_traverse():
             if not fname:
                 flash("Seleziona un file da eliminare.")
                 return render_template("form_traverse.html", files=files, data=data)
-            delete_json(TRAVERSE_DIR, fname)
-            flash(f"File {fname} eliminato.")
-            files = list_json_files(TRAVERSE_DIR)
+            if _delete_entry(TRAVERSE_DIR, fname, JsonFileTraverse):
+                flash(f"File {fname} eliminato.")
+            else:
+                flash(f"File {fname} non trovato.")
+            files = _list_entries(TRAVERSE_DIR, JsonFileTraverse)
             return render_template("form_traverse.html", files=files, data={})
 
         trav = traverse_from_form(request.form)
@@ -765,9 +823,9 @@ def form_traverse():
             "Pij": trav.Pij
         }
         filename = f"{trav.name}.json"
-        save_json(TRAVERSE_DIR, filename, out)
+        _save_entry(TRAVERSE_DIR, filename, out, JsonFileTraverse)
         flash(f"Salvato {filename}")
-        files = list_json_files(TRAVERSE_DIR)
+        files = _list_entries(TRAVERSE_DIR, JsonFileTraverse)
         return render_template("form_traverse.html", files=files, data=out)
 
     return render_template("form_traverse.html", files=files, data=data)
