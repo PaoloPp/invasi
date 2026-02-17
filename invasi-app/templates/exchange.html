@@ -95,13 +95,13 @@
   {% include "navbar.html" %}
 
   <div class="container mt-5">
-    <h1>Modin Exchange</h1>
+    <h1>Bilancio del sistema</h1>
 
     <div id="selected-values" class="selected-values">
       <strong>Invasi selezionati:</strong> <em>None</em>
     </div>
     <div id="selected-traverse" class="selected-values">
-      <strong>Traverse selezionate:</strong> <em>None</em>
+      <strong>Altre risorse selezionate:</strong> <em>Nessuna</em>
     </div>
 
     <form id="damns_select" method="POST">
@@ -123,13 +123,13 @@
           </ul>
         </div>
 
-        <!-- Traverse -->
+        <!-- Altre risorse -->
         <div class="dropdown" id="dropdown-container-traverse">
-          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonTraverse"
+          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonAltre risorse"
             data-bs-toggle="dropdown" aria-expanded="false">
-            Seleziona traverse
+            Seleziona altre risorse
           </button>
-          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonTraverse" id="dropdown-menu-traverse">
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonAltre risorse" id="dropdown-menu-traverse">
             {% for file in traverse_files %}
             <li>
               <label class="dropdown-item">
@@ -142,9 +142,17 @@
         </div>
 
         <!-- Parametri legacy ancora presenti nel form -->
-        <span>Lambda: </span>
-        <input type="text" inputmode="decimal" id="lambda" class="numeric-input" name="lambda" class="form-control"
-          placeholder="Lambda" required style="width: 120px;">
+        <span>KA:</span>
+        <input type="text" inputmode="decimal" class="numeric-input form-control" name="KA" placeholder="KA" required style="width: 90px;">
+
+        <span>KB:</span>
+        <input type="text" inputmode="decimal" class="numeric-input form-control" name="KB" placeholder="KB" required style="width: 90px;">
+
+        <span>α1:</span>
+        <input type="text" inputmode="decimal" class="numeric-input form-control" name="alpha1" placeholder="α1" required style="width: 90px;">
+
+        <span>α2:</span>
+        <input type="text" inputmode="decimal" class="numeric-input form-control" name="alpha2" placeholder="α2" required style="width: 90px;">
 
         <button type="submit" class="btn btn-primary">Inizia elaborazione</button>
         <button onclick="printSection()" class="btn btn-primary no-print">Salva come PDF</button>
@@ -155,7 +163,7 @@
 
     <form id="past_select" method="POST">
       <select class="form-select" id="past_select" name="past_select" required>
-        <option value="">-- Seleziona un bilanciamento --</option>
+        <option value="">-- Seleziona un bilancio salvato --</option>
         {% for file in past_exchange %}
         <option value="{{ file }}">{{ file }}</option>
         {% endfor %}
@@ -238,7 +246,7 @@
             <tr>
               <th></th>
               <th>Invasi</th>
-              <th>Disponibilità traversa SV (Mm³)</th>
+              <th>Disponibilità altre risorse Q (Mm³)</th>
               <th>Totale (Mm³)</th>
             </tr>
           </thead>
@@ -272,12 +280,12 @@
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="criterio3-tab" data-bs-toggle="tab" data-bs-target="#criterio3" type="button"
               role="tab" aria-controls="criterio3" aria-selected="false">
-              Finale
+              Risultato finale
             </button>
           </li>
         </ul>
 
-        {% set months = ["Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"] %}
+        {% set months = ["Ott","Nov","Dic","Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set"] %}
 
         <div class="tab-content" id="dataTabsContent">
           <!-- ================= Criterio 1 ================= -->
@@ -435,7 +443,7 @@
             {% endif %}
           </div>
 
-          <!-- ================= Finale (criterio scelto) ================= -->
+          <!-- ================= Risultato finale (criterio scelto) ================= -->
           <div class="tab-pane fade" id="criterio3" role="tabpanel" aria-labelledby="criterio3-tab">
             {% if calculated_data3 %}
             {% set model3 = calculated_data3.get('model','?') %}
@@ -538,20 +546,20 @@
         });
       });
 
-      // Traverse Dropdown Handling
+      // Altre risorse Dropdown Handling
       const traverseCheckboxes = document.querySelectorAll('.option-checkbox-traverse');
-      const selectedTraverseContainer = document.getElementById('selected-traverse');
+      const selectedAltre risorseContainer = document.getElementById('selected-traverse');
       traverseCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', () => {
           const selected = Array.from(traverseCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
-          selectedTraverseContainer.innerHTML = `<strong>Traverse selezionate:</strong> `;
+          selectedAltre risorseContainer.innerHTML = `<strong>Altre risorse selezionate:</strong> `;
           if (selected.length === 0) {
-            selectedTraverseContainer.innerHTML += `<em>None</em>`;
+            selectedAltre risorseContainer.innerHTML += `<em>None</em>`;
           } else {
             selected.forEach(value => {
               const span = document.createElement('span');
               span.textContent = value;
-              selectedTraverseContainer.appendChild(span);
+              selectedAltre risorseContainer.appendChild(span);
             });
           }
         });

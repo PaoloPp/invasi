@@ -667,8 +667,9 @@ def dashboard():
                 data, "caso2"
             )
             return render_template('dashboard.html', filename=filename, data=data, months=months, files=files,
-                                   plotA="caso1_plot.png", plotB="caso2_plot.png")
-    return render_template('dashboard.html', data=None, files=files)
+                                   plotA="caso1_plot.png", plotB="caso2_plot.png",
+                                   resource_type="invasi")
+    return render_template('dashboard.html', data=None, files=files, resource_type="invasi")
 
 
 @main_bp.route("/form", methods=["GET", "POST"])
@@ -1913,7 +1914,7 @@ def exchange():
             KB = max(0, 12 - max(0, min(KA, 12)))
 
         if not selected_files:
-            flash("Select at least one basin.", "danger")
+            flash("Seleziona almeno un invaso.", "danger")
             return redirect(url_for('main.exchange'))
 
         basins_json = _load_basin_jsons(selected_files)
