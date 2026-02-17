@@ -1801,7 +1801,7 @@ def exchange():
         # regular empty page
         return render_template('exchange.html', data=None,
                                past_exchange=past_exchange, files=files, traverse_files=traverse_files,
-                               surplus_sum=0, deficit_sum=0, traverse=0, total=0)
+                               surplus_sum=0, deficit_sum=0, traverse=0, traverse_tot=0, total=0)
 
     # ---------- DELETE: JSON API ----------
     if request.method == 'DELETE':
