@@ -649,30 +649,122 @@ def index():
 @main_bp.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    files = get_user_files()
+    resource_type = request.values.get("resource_type", "invasi")
+    files = get_user_files() if resource_type == "invasi" else get_user_files_traverse()
     if request.method == 'POST':
         filename = request.form.get("data_select")
         if filename:
-            data = load_json_data(filename)
+            data = load_json_data(filename) if resource_type == "invasi" else load_json_data_traverse(filename)
             if not data:
                 return redirect(url_for('main_bp.dashboard'))
             data = round_floats(data)
-            months = set_year(data.get("Mese di partenza"))
-            plot_values(
-                ["Aitot*", "Etot*", "W*", "Sf 1*", "D/S 1*", "Winv tot", "Wo"],
-                data, "caso1"
-            )
-            plot_values(
-                ["Aitot*", "Etot*", "W*", "Sf 2*", "D/S 2*", "Winv aut", "Wo"],
-                data, "caso2"
-            )
+            months = set_year(data.get("Mese di partenza", "October"))
+            if resource_type == "invasi":
+                plot_values(
+                    ["Aitot*", "Etot*", "W*", "Sf 1*", "D/S 1*", "Winv tot", "Wo"],
+                    data, "caso1"
+                )
+                plot_values(
+                    ["Aitot*", "Etot*", "W*", "Sf 2*", "D/S 2*", "Winv aut", "Wo"],
+                    data, "caso2"
+                )
             return render_template('dashboard.html', filename=filename, data=data, months=months, files=files,
-                                   plotA="caso1_plot.png", plotB="caso2_plot.png")
-    return render_template('dashboard.html', data=None, files=files)
+                                   plotA="caso1_plot.png", plotB="caso2_plot.png", resource_type=resource_type)
+    return render_template('dashboard.html', data=None, files=files, resource_type=resource_type)
+
+
+def _render_form_page(action_label: str, resource_type: str):
+    template_name = "form.html" if resource_type == "invasi" else "form_traverse.html"
+    files = list_json_files(BASINS_DIR) if resource_type == "invasi" else list_json_files(TRAVERSE_DIR)
+    data = {}
+    folder = BASINS_DIR if resource_type == "invasi" else TRAVERSE_DIR
+
+    if request.method == "POST":
+        if "switch_resource" in request.form:
+            return redirect(url_for(f"main_bp.form_{action_label}", resource_type=request.form.get("resource_type", "invasi")))
+
+        if "load" in request.form:
+            fname = request.form.get("data_select", "")
+            if not fname:
+                flash("Seleziona un file.")
+                return render_template(template_name, files=files, data=data, action_label=action_label, resource_type=resource_type)
+            data = load_json(folder, fname)
+            return render_template(template_name, files=files, data=data, action_label=action_label, resource_type=resource_type)
+
+        if "delete" in request.form:
+            fname = request.form.get("data_select", "")
+            if not fname:
+                flash("Seleziona un file da eliminare.")
+                return render_template(template_name, files=files, data=data, action_label=action_label, resource_type=resource_type)
+            delete_json(folder, fname)
+            flash(f"File {fname} eliminato.")
+            files = list_json_files(folder)
+            return render_template(template_name, files=files, data={}, action_label=action_label, resource_type=resource_type)
+
+        if resource_type == "invasi":
+            basin = basin_from_form(request.form)
+            out = {
+                "Filename": basin.name,
+                "Mese di partenza": basin.start_month,
+                "S": basin.S_km2,
+                "Winv tot": basin.Winv_tot,
+                "Winv aut": basin.Winv_aut,
+                "Wo": basin.Wo,
+                "A": basin.A,
+                "A'": basin.Aprime,
+                "P ev": basin.P_ev,
+                "P inf": basin.P_inf,
+                "D ec": basin.D_ec,
+                "E pot": basin.E_pot,
+                "E irr": basin.E_irr,
+                "E ind": basin.E_ind,
+                "E tra": basin.E_tra,
+                "Cj(A)": basin.CjA,
+                "Cj(A')": basin.CjAprime,
+                "Cj(ev)": basin.Cjev,
+                "Cj(inf)": basin.Cjinf,
+                "Cj(ec)": basin.Cjec,
+                "Cj(pot)": basin.Cjpot,
+                "Cj(irr)": basin.Cjirr,
+                "Cj(ind)": basin.Cjind,
+                "Cj(tra)": basin.Cjtra,
+            }
+            filename = f"{basin.name}.json"
+        else:
+            trav = traverse_from_form(request.form)
+            out = {"Filename": trav.name, "Pj": trav.Pj, "Pj(eco)": trav.Pj_eco, "Pij": trav.Pij}
+            filename = f"{trav.name}.json"
+
+        save_json(folder, filename, out)
+        flash(f"Salvato {filename}")
+        files = list_json_files(folder)
+        return render_template(template_name, files=files, data=out, action_label=action_label, resource_type=resource_type)
+
+    return render_template(template_name, files=files, data=data, action_label=action_label, resource_type=resource_type)
 
 
 @main_bp.route("/form", methods=["GET", "POST"])
+@main_bp.route("/form/modifica", methods=["GET", "POST"], endpoint="form_modifica")
+@main_bp.route("/form/nuova", methods=["GET", "POST"], endpoint="form_nuova")
+@main_bp.route("/form/elimina", methods=["GET", "POST"], endpoint="form_elimina")
 def form_basin():
+    path = request.path
+    action_label = "modifica"
+    if path.endswith("/nuova"):
+        action_label = "nuova"
+    elif path.endswith("/elimina"):
+        action_label = "elimina"
+    resource_type = request.values.get("resource_type", "invasi")
+    return _render_form_page(action_label, resource_type)
+
+
+@main_bp.route("/form_traverse", methods=["GET", "POST"])
+def form_traverse_redirect():
+    return redirect(url_for("main_bp.form_modifica", resource_type="altre"))
+
+
+@main_bp.route("/form_old", methods=["GET", "POST"])
+def form_basin_old():
     files = list_json_files(BASINS_DIR)
     data = {}
     if request.method == "POST":
@@ -733,43 +825,6 @@ def form_basin():
     return render_template("form.html", files=files, data=data)
 
 
-@main_bp.route("/form_traverse", methods=["GET", "POST"])
-def form_traverse():
-    files = list_json_files(TRAVERSE_DIR)
-    data = {}
-    if request.method == "POST":
-        if "load" in request.form:
-            fname = request.form.get("data_select", "")
-            if not fname:
-                flash("Seleziona un file.")
-                return render_template("form_traverse.html", files=files, data=data)
-            data = load_json(TRAVERSE_DIR, fname)
-            return render_template("form_traverse.html", files=files, data=data)
-
-        if "delete" in request.form:
-            fname = request.form.get("data_select", "")
-            if not fname:
-                flash("Seleziona un file da eliminare.")
-                return render_template("form_traverse.html", files=files, data=data)
-            delete_json(TRAVERSE_DIR, fname)
-            flash(f"File {fname} eliminato.")
-            files = list_json_files(TRAVERSE_DIR)
-            return render_template("form_traverse.html", files=files, data={})
-
-        trav = traverse_from_form(request.form)
-        out = {
-            "Filename": trav.name,
-            "Pj": trav.Pj,
-            "Pj(eco)": trav.Pj_eco,
-            "Pij": trav.Pij
-        }
-        filename = f"{trav.name}.json"
-        save_json(TRAVERSE_DIR, filename, out)
-        flash(f"Salvato {filename}")
-        files = list_json_files(TRAVERSE_DIR)
-        return render_template("form_traverse.html", files=files, data=out)
-
-    return render_template("form_traverse.html", files=files, data=data)
 
 
 @main_bp.route('/exchange', methods=['GET', 'POST', 'PUT', 'DELETE'])
