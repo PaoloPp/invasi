@@ -743,9 +743,7 @@ def dashboard():
     if resource_type == "altre_risorse":
         files = get_user_files_traverse()
     else:
-        files = [f for f in get_user_files() if "conza" in (f or "").lower()]
-        if not files:
-            files = get_user_files()
+        files = get_user_files()
 
     if request.method == 'POST':
         filename = request.form.get("data_select")
