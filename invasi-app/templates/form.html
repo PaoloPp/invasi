@@ -24,16 +24,22 @@
         <!--<div class="container mt-5 ms-3 me-3">-->
         <div class="container mt-5">
                 <h3>Modifica dati</h3>
-                <p><strong>Opzione:</strong> Invasi / Altre risorse</p>
-                <div class="btn-group mb-3" role="group">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <p class="mb-0"><strong>Opzione:</strong></p>
+                        <select class="form-select w-auto" onchange="if(this.value){window.location.href=this.value}">
+                                <option value="{{ url_for('main_bp.form_basin') }}" selected>Invasi</option>
+                                <option value="{{ url_for('main_bp.form_traverse') }}">Altre risorse</option>
+                        </select>
+                </div>
+                <div class="btn-group mb-3" role="group" aria-label="Azioni dati">
                         <button type="button" class="btn btn-outline-primary active">Modifica dati</button>
-                        <button type="button" class="btn btn-outline-primary" disabled>Nuova infrastruttura</button>
-                        <button type="button" class="btn btn-outline-danger" disabled>Elimina dati</button>
+                        <a href="{{ url_for('main_bp.form_basin') }}" class="btn btn-outline-primary">Nuova infrastruttura</a>
+                        <button type="submit" form="data_select" name="delete" value="delete" class="btn btn-outline-danger">Elimina dati</button>
                 </div>
 
                 <form id="data_select" method="POST">
                         <select class="form-select" id="filenameToModify" name="data_select" required
-                                onchange="setFileName()">
+                                >
                                 <option value="">Seleziona i dati Invasi da modificare</option>
                                 {% for file in files %}
                                 <option value="{{ file }}">{{ file }}</option>
