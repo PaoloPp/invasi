@@ -278,12 +278,6 @@
               Criterio 2
             </button>
           </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="criterio3-tab" data-bs-toggle="tab" data-bs-target="#criterio3" type="button"
-              role="tab" aria-controls="criterio3" aria-selected="false">
-              Selezione automatica
-            </button>
-          </li>
         </ul>
 
         {% set months = ["Ott","Nov","Dic","Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set"] %}
@@ -444,81 +438,6 @@
             {% endif %}
           </div>
 
-          <!-- ================= Selezione automatica (criterio scelto) ================= -->
-          <div class="tab-pane fade" id="criterio3" role="tabpanel" aria-labelledby="criterio3-tab">
-            {% if calculated_data3 %}
-            {% set model3 = calculated_data3.get('model','?') %}
-            {% set ed_tot_c3 = 0 %}
-            {% for d in calculated_data3.get('donors', {}).values() %}
-            {% set ed_tot_c3 = ed_tot_c3 + (d.get('S_prime',0)) %}
-            {% endfor %}
-            <table class="table table-bordered table-striped table-fixed">
-              <thead>
-                <tr>
-                  <th colspan="13">
-                    {% set m3 = calculated_data3.get('model','?') %}
-                    {% if m3 is mapping and 'criterion' in m3 %}
-                    Modello A — Criterio {{ m3['criterion'] }}{% if m3.get('weights_desc') %} — {{ m3['weights_desc']
-                    }}{% endif %}
-                    {% elif m3 is mapping and 'variante' in m3 %}
-                    Modello B — Variante {{ m3['variante'] }}{% if m3.get('weights_desc') %} — {{ m3['weights_desc']
-                    }}{% endif %}
-                    {% else %}
-                    Modello A — Criterio 1
-                    {% endif %}
-                    — Trasferimenti mensili (Mm³) — Erogato totale dai donanti (annuo): {{ '%.2f'|format(ed_tot_c3) }} —
-                    Cond. Soddisfatte: {{ satisfiedA }}
-                  </th>
-                </tr>
-                <tr>
-                  <th>Donatore</th>
-                  {% for m in months %}<th style="font-size: small;">{{ m }}</th>{% endfor %}
-                </tr>
-              </thead>
-              <tbody>
-                {% for name, d in calculated_data3.get('donors', {}).items() %}
-                {# S_prime serve per normalizzare i pesi; fallback a S_net se manca #}
-                {% set Sprime = (d.get('S_prime', d.get('S_net', 0.0)) or 0.0) %}
-                {# Riga pesi per questo invaso (prima dei contributi) #}
-                <tr class="table-secondary">
-                  <td style="font-style: italic;">Pesi {{ name }}</td>
-                  {% for v in d.get('Esj', [0]*12) %}
-                  {% set w = ( (v / Sprime) if Sprime > 0 else 0.0 ) %}
-                  <td>{{ '%.2f'|format(w) }}</td>
-                  {% endfor %}
-                </tr>
-                {# Riga contributi mensili (come prima) #}
-                <tr>
-                  <td>{{ name }}</td>
-                  {% for v in d.get('Esj', [0]*12) %}
-                  <td>{{ '%.2f'|format(v) }}</td>
-                  {% endfor %}
-                </tr>
-                {% endfor %}
-              </tbody>
-
-            </table>
-
-            <table class="table table-bordered table-striped table-fixed">
-              <thead>
-                <tr>
-                  <th>Ricevente</th>
-                  {% for m in months %}<th style="font-size: small;">{{ m }}</th>{% endfor %}
-                </tr>
-              </thead>
-              <tbody>
-                {% for name, r in calculated_data3.get('receivers', {}).items() %}
-                <tr>
-                  <td>{{ name }}</td>
-                  {% set series = r.get('A_total_sj', r.get('A_sj', [0]*12)) %}
-                  {% for v in series %}
-                  <td>{{ '%.2f'|format(v) }}</td>
-                  {% endfor %}
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-            {% endif %}
           </div>
         </div>
       </div>
