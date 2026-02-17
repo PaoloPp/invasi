@@ -140,6 +140,8 @@
         <div id="printableArea">
             <br>
 
+            {% if data %}
+            {% if (resource_type or "invasi") == "invasi" %}
 
             {% if (resource_type or "invasi") == "invasi" %}
 
@@ -504,6 +506,11 @@
                 {% endif %}
 
                 <br>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                Seleziona un file per visualizzare i dati.
+            </div>
+            {% endif %}
             </div>
         </div> <!-- End of printableArea -->
 
