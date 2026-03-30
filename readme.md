@@ -30,6 +30,17 @@ python app.py
 ```
 The app factory initialises the database tables automatically on first launch and serves the site on `http://127.0.0.1:5000/` in debug mode.【F:invasi-app/app.py†L22-L47】
 
+### One-click startup on Windows
+If you want an automated setup/start flow on Windows, double-click `start-local-windows.bat` from the project root. The script will:
+- verify Python 3.10+ is installed and reachable from `PATH`;
+- create a local `.venv` virtual environment (if missing);
+- install/update dependencies from `invasi-app/requirements.txt`;
+- check that key runtime libraries import correctly;
+- create `invasi-app/instance/` and a placeholder `invasi-app/secret.py` (if missing);
+- launch the app with `python app.py` from `invasi-app/`.
+
+PowerShell script path: `scripts/run-local-windows.ps1`.
+
 ### Creating an administrator
 New accounts are inactive by default. Use a Flask shell (or a short Python snippet) to seed an administrator capable of activating users:
 ```bash
@@ -94,6 +105,17 @@ Dalla cartella `invasi-app/`, avvia Flask con:
 python app.py
 ```
 L'app factory crea automaticamente le tabelle del database al primo avvio e rende disponibile il sito su `http://127.0.0.1:5000/` in modalità debug.【F:invasi-app/app.py†L22-L47】
+
+### Avvio \"one-click\" su Windows
+Se vuoi un flusso automatico di configurazione e avvio su Windows, fai doppio clic su `start-local-windows.bat` dalla root del progetto. Lo script:
+- verifica che Python 3.10+ sia installato e disponibile nel `PATH`;
+- crea un ambiente virtuale locale `.venv` (se assente);
+- installa/aggiorna le dipendenze da `invasi-app/requirements.txt`;
+- controlla l'import delle librerie Python essenziali;
+- crea `invasi-app/instance/` e un `invasi-app/secret.py` con placeholder (se assenti);
+- avvia l'app con `python app.py` da `invasi-app/`.
+
+Percorso script PowerShell: `scripts/run-local-windows.ps1`.
 
 ### Creazione di un amministratore
 I nuovi account sono inattivi per impostazione predefinita. Utilizza una shell Flask (o un breve script Python) per creare un amministratore in grado di attivare gli utenti:
